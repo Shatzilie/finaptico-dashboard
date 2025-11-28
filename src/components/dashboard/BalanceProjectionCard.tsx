@@ -10,8 +10,15 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const CLIENT_CODE = "CLIENT_001";
+const CLIENT_OPTIONS = ["CLIENT_001", "CLIENT_002"] as const;
 
 interface TimeseriesRow {
   client_code: string;
@@ -29,6 +36,7 @@ interface ChartData {
 }
 
 export function BalanceProjectionCard() {
+  const [selectedClient, setSelectedClient] = useState<string>(CLIENT_OPTIONS[0]);
   const [data, setData] = useState<TimeseriesRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +50,7 @@ export function BalanceProjectionCard() {
         const { data: responseData, error: invokeError } = await supabase.functions.invoke(
           "treasury-timeseries",
           {
-            body: { client_code: CLIENT_CODE },
+            body: { client_code: selectedClient },
           }
         );
 
@@ -59,7 +67,7 @@ export function BalanceProjectionCard() {
     };
 
     fetchTimeseries();
-  }, []);
+  }, [selectedClient]);
 
   const chartData: ChartData[] = data
     .map((row) => ({
@@ -76,8 +84,23 @@ export function BalanceProjectionCard() {
   const latestData = chartData.length > 0 ? chartData[chartData.length - 1] : null;
   const currency = data.length > 0 ? data[0].currency : "EUR";
 
+  const clientSelector = (
+    <Select value={selectedClient} onValueChange={setSelectedClient}>
+      <SelectTrigger className="h-8 w-[130px] text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {CLIENT_OPTIONS.map((client) => (
+          <SelectItem key={client} value={client} className="text-xs">
+            {client}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+
   return (
-    <DashboardCard title="Proyección de Saldo" icon={TrendingUp}>
+    <DashboardCard title="Proyección de Saldo" icon={TrendingUp} action={clientSelector}>
       {isLoading ? (
         <div className="flex h-48 items-center justify-center">
           <p className="text-sm text-muted-foreground">Cargando proyección de saldo…</p>
