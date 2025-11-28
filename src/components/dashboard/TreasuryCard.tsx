@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Wallet } from "lucide-react";
 
 type TreasuryRow = {
   client_code: string;
@@ -10,85 +12,100 @@ type TreasuryRow = {
 
 const TREASURY_URL = "https://utwhvnafvtardndgkbjn.functions.supabase.co/treasury-feed";
 
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0d2h2bmFmdnRhcmRuZGdrYmpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1MTQ3NDcsImV4cCI6MjA3MzA5MDc0N30.2oV-SA1DS-nM72udb-I_IGYM1vIRxRp66np3N_ZVYbY";
-
 export function TreasuryCard() {
   const [data, setData] = useState<TreasuryRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function load() {
+    async function fetchTreasury() {
       try {
-        setLoading(true);
+        setIsLoading(true);
         setError(null);
 
-        const res = await fetch(TREASURY_URL, {
-          headers: {
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-          },
-        });
+        const response = await fetch(TREASURY_URL);
 
-        if (!res.ok) {
-          throw new Error(`Error ${res.status}`);
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
         }
 
-        const rows: TreasuryRow[] = await res.json();
+        const rows: TreasuryRow[] = await response.json();
         setData(rows);
       } catch (e: any) {
-        setError(e.message ?? "Error cargando tesorería");
+        setError(e.message ?? "Error desconocido al cargar tesorería");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     }
 
-    load();
+    fetchTreasury();
   }, []);
 
-  const today = data[0]?.snapshot_date ?? null;
-
   return (
-    <div className="flex flex-col gap-3 p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-[#111827]">Tesorería</h3>
-          {today && <p className="text-xs text-[#6B7280]">Saldo total por empresa · {today}</p>}
+    <Card className="animate-fade-in">
+      <CardHeader className="flex flex-row items-center gap-2 pb-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
+          <Wallet className="h-4 w-4 text-primary" />
         </div>
-      </div>
+        <CardTitle className="text-base font-semibold text-foreground">Tesorería</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Loading state */}
+        {isLoading && (
+          <p className="text-sm text-muted-foreground">Cargando tesorería...</p>
+        )}
 
-      {loading && <p className="text-xs text-[#6B7280]">Cargando datos de tesorería…</p>}
+        {/* Error state */}
+        {!isLoading && error && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3">
+            <p className="text-sm font-medium text-destructive">No se ha podido cargar la tesorería</p>
+            <p className="text-xs text-destructive/80">{error}</p>
+          </div>
+        )}
 
-      {error && !loading && <p className="text-xs text-red-500">No se ha podido cargar la tesorería ({error})</p>}
+        {/* Empty state */}
+        {!isLoading && !error && data.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            Todavía no hay datos de tesorería guardados.
+          </p>
+        )}
 
-      {!loading && !error && data.length === 0 && (
-        <p className="text-xs text-[#6B7280]">Todavía no hay saldos registrados en el ERP.</p>
-      )}
-
-      {!loading && !error && data.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {data.map((row) => (
-            <div
-              key={`${row.client_code}-${row.instance_code}`}
-              className="flex items-center justify-between rounded-md bg-white/60 px-3 py-2 shadow-sm"
-            >
-              <div className="flex flex-col">
-                <span className="text-xs font-medium text-[#4B5563]">
-                  {row.client_code} · {row.instance_code}
-                </span>
-                <span className="text-[11px] text-[#6B7280]">Saldo consolidado</span>
-              </div>
-              <div className="text-sm font-semibold text-[#6C5CE7]">
-                {row.total_balance.toLocaleString("es-ES", {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}{" "}
-                {row.currency}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+        {/* Data table */}
+        {!isLoading && !error && data.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="py-2 pr-4 text-left font-medium text-muted-foreground">Cliente</th>
+                  <th className="py-2 pr-4 text-left font-medium text-muted-foreground">Instancia</th>
+                  <th className="py-2 pr-4 text-left font-medium text-muted-foreground">Fecha</th>
+                  <th className="py-2 text-right font-medium text-muted-foreground">Saldo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((row, index) => (
+                  <tr 
+                    key={`${row.client_code}-${row.instance_code}-${index}`}
+                    className="border-b border-border/50 last:border-0"
+                  >
+                    <td className="py-2 pr-4 text-foreground">{row.client_code}</td>
+                    <td className="py-2 pr-4 text-foreground">{row.instance_code}</td>
+                    <td className="py-2 pr-4 text-muted-foreground">
+                      {new Date(row.snapshot_date).toLocaleDateString("es-ES")}
+                    </td>
+                    <td className="py-2 text-right font-semibold text-primary">
+                      {new Intl.NumberFormat("es-ES", { 
+                        style: "currency", 
+                        currency: row.currency 
+                      }).format(row.total_balance)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
