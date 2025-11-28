@@ -40,11 +40,8 @@ export function AppSidebar() {
       <div className="flex h-full flex-col">
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
-          <div className="flex items-center gap-3 overflow-hidden">
+          <div className="flex items-center overflow-hidden">
             <img src={logo} alt="Finaptico" className="h-8 w-8 shrink-0" />
-            {!collapsed && (
-              <span className="text-lg font-semibold text-foreground whitespace-nowrap">Finaptico</span>
-            )}
           </div>
           <button
             onClick={() => setCollapsed(!collapsed)}
