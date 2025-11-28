@@ -41,7 +41,7 @@ export function AppSidebar() {
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-border px-4">
           <div className="flex items-center overflow-hidden">
-            <img src={logo} alt="Finaptico" className="h-8 w-8 shrink-0" />
+            <img src={logo} alt="Finaptico" className="h-8 w-auto shrink-0" />
           </div>
           <button
             onClick={() => setCollapsed(!collapsed)}
