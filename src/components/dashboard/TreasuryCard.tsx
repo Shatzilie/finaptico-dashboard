@@ -6,11 +6,11 @@ type TreasuryRow = {
   client_code: string;
   instance_code: string;
   snapshot_date: string;
-  total_balance: number;
+  total_balance: string;
   currency: string;
 };
 
-const TREASURY_URL = "https://utwhvnafvtardndgkbjn.functions.supabase.co/treasury-feed?client_code=CLIENT_001";
+const TREASURY_URL = "https://utwhvnafvtardndgkbjn.functions.supabase.co/treasury-feed";
 
 export function TreasuryCard() {
   const [data, setData] = useState<TreasuryRow[]>([]);
@@ -97,7 +97,7 @@ export function TreasuryCard() {
                       {new Intl.NumberFormat("es-ES", { 
                         style: "currency", 
                         currency: row.currency 
-                      }).format(row.total_balance)}
+                      }).format(Number(row.total_balance))}
                     </td>
                   </tr>
                 ))}
