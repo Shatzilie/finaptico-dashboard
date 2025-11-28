@@ -1,35 +1,62 @@
-import { ListChecks, Circle, CheckCircle2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ListChecks, Circle, AlertCircle } from "lucide-react";
 import { DashboardCard } from "./DashboardCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
-// Types for Supabase integration
-export interface Action {
+const CLIENT_ID = "CLIENT_001";
+
+interface ActionItem {
   id: string;
   title: string;
   description?: string;
   due_date: string;
+  status: string;
   priority: "high" | "medium" | "low";
-  completed: boolean;
 }
 
-interface NextActionsCardProps {
-  data?: Action[] | null;
-  isLoading?: boolean;
-  onToggleComplete?: (id: string) => void;
-}
+export function NextActionsCard() {
+  const [data, setData] = useState<ActionItem[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-const priorityColors = {
-  high: "text-destructive",
-  medium: "text-warning",
-  low: "text-muted-foreground",
-};
+  useEffect(() => {
+    const fetchActions = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-export function NextActionsCard({ 
-  data, 
-  isLoading, 
-  onToggleComplete 
-}: NextActionsCardProps) {
+        const { data: responseData, error: invokeError } = await supabase.functions.invoke(
+          "client-actions-feed",
+          {
+            body: { client_id: CLIENT_ID },
+          }
+        );
+
+        if (invokeError) {
+          throw new Error(invokeError.message);
+        }
+
+        setData(responseData as ActionItem[]);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error desconocido");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchActions();
+  }, []);
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
   return (
     <DashboardCard
       title="Próximas Acciones"
@@ -52,31 +79,29 @@ export function NextActionsCard({
             </div>
           ))}
         </div>
+      ) : error ? (
+        <div className="py-6 text-center">
+          <AlertCircle className="mx-auto h-8 w-8 text-destructive mb-2" />
+          <p className="text-sm font-medium text-foreground">No se han podido cargar las acciones</p>
+          <p className="text-xs text-muted-foreground mt-1">{error}</p>
+        </div>
       ) : data && data.length > 0 ? (
         <div className="space-y-2">
           {data.map((action) => (
             <div
               key={action.id}
-              className={cn(
-                "flex items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-muted/50",
-                action.completed && "opacity-60"
-              )}
+              className="flex items-start gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-muted/50"
             >
-              <button
-                onClick={() => onToggleComplete?.(action.id)}
-                className="mt-0.5 shrink-0"
-              >
-                {action.completed ? (
-                  <CheckCircle2 className="h-5 w-5 text-success" />
-                ) : (
-                  <Circle className={cn("h-5 w-5", priorityColors[action.priority])} />
-                )}
-              </button>
+              <div className="mt-0.5 shrink-0">
+                <Circle
+                  className={cn(
+                    "h-5 w-5",
+                    action.priority === "high" ? "text-[#6C5CE7]" : "text-muted-foreground"
+                  )}
+                />
+              </div>
               <div className="flex-1 min-w-0">
-                <p className={cn(
-                  "text-sm font-medium text-foreground",
-                  action.completed && "line-through"
-                )}>
+                <p className="text-sm font-medium text-foreground">
                   {action.title}
                 </p>
                 {action.description && (
@@ -84,12 +109,15 @@ export function NextActionsCard({
                     {action.description}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {new Date(action.due_date).toLocaleDateString("es-ES", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </p>
+                <div className="mt-1 flex items-center gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {formatDate(action.due_date)}
+                  </p>
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <p className="text-xs text-muted-foreground capitalize">
+                    {action.status}
+                  </p>
+                </div>
               </div>
             </div>
           ))}
@@ -97,7 +125,7 @@ export function NextActionsCard({
       ) : (
         <div className="py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            No hay acciones pendientes
+            No hay acciones pendientes.
           </p>
         </div>
       )}
