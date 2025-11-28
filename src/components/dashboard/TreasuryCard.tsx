@@ -10,6 +10,9 @@ type TreasuryRow = {
 
 const TREASURY_URL = "https://utwhvnafvtardndgkbjn.functions.supabase.co/treasury-feed";
 
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0d2h2bmFmdnRhcmRuZGdrYmpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1MTQ3NDcsImV4cCI6MjA3MzA5MDc0N30.2oV-SA1DS-nM72udb-I_IGYM1vIRxRp66np3N_ZVYbY";
+
 export function TreasuryCard() {
   const [data, setData] = useState<TreasuryRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +24,12 @@ export function TreasuryCard() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(TREASURY_URL);
+        const res = await fetch(TREASURY_URL, {
+          headers: {
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+        });
+
         if (!res.ok) {
           throw new Error(`Error ${res.status}`);
         }
