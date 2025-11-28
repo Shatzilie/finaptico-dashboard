@@ -8,7 +8,7 @@ type TreasuryRow = {
   currency: string;
 };
 
-const TREASURY_URL = "https://utwhvnafvtardndgkbjn.functions.supabase.co/treasury-feed;
+const TREASURY_URL = "https://utwhvnafvtardndgkbjn.functions.supabase.co/treasury-feed";
 
 export function TreasuryCard() {
   const [data, setData] = useState<TreasuryRow[]>([]);
