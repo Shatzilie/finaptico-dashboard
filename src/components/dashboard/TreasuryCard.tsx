@@ -1,90 +1,86 @@
-import { Wallet, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { DashboardCard } from "./DashboardCard";
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useState } from "react";
 
-// Types for Supabase integration
-export interface TreasuryData {
-  id: string;
-  balance: number;
-  income: number;
-  expenses: number;
+type TreasuryRow = {
+  client_code: string;
+  instance_code: string;
+  snapshot_date: string;
+  total_balance: number;
   currency: string;
-  updated_at: string;
-}
+};
 
-interface TreasuryCardProps {
-  data?: TreasuryData | null;
-  isLoading?: boolean;
-}
+const TREASURY_URL = "https://dtmrywilxpilpzokxxif.functions.supabase.co/treasury-feed";
 
-export function TreasuryCard({ data, isLoading }: TreasuryCardProps) {
-  return (
-    <DashboardCard
-      title="Tesorería"
-      icon={Wallet}
-      action={
-        <Button variant="ghost" size="sm" className="text-primary">
-          Ver detalle
-        </Button>
+export function TreasuryCard() {
+  const [data, setData] = useState<TreasuryRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await fetch(TREASURY_URL);
+        if (!res.ok) {
+          throw new Error(`Error ${res.status}`);
+        }
+
+        const rows: TreasuryRow[] = await res.json();
+        setData(rows);
+      } catch (e: any) {
+        setError(e.message ?? "Error cargando tesorería");
+      } finally {
+        setLoading(false);
       }
-    >
-      {isLoading ? (
-        <div className="space-y-3">
-          <div className="h-8 w-32 animate-pulse rounded bg-muted" />
-          <div className="flex gap-4">
-            <div className="h-6 w-24 animate-pulse rounded bg-muted" />
-            <div className="h-6 w-24 animate-pulse rounded bg-muted" />
-          </div>
+    }
+
+    load();
+  }, []);
+
+  const today = data[0]?.snapshot_date ?? null;
+
+  return (
+    <div className="flex flex-col gap-3 p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-[#111827]">Tesorería</h3>
+          {today && <p className="text-xs text-[#6B7280]">Saldo total por empresa · {today}</p>}
         </div>
-      ) : data ? (
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Saldo actual</p>
-            <p className="text-3xl font-bold text-foreground">
-              {new Intl.NumberFormat("es-ES", {
-                style: "currency",
-                currency: data.currency,
-              }).format(data.balance)}
-            </p>
-          </div>
-          <div className="flex gap-6">
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-success/10">
-                <ArrowUpRight className="h-3 w-3 text-success" />
+      </div>
+
+      {loading && <p className="text-xs text-[#6B7280]">Cargando datos de tesorería…</p>}
+
+      {error && !loading && <p className="text-xs text-red-500">No se ha podido cargar la tesorería ({error})</p>}
+
+      {!loading && !error && data.length === 0 && (
+        <p className="text-xs text-[#6B7280]">Todavía no hay saldos registrados en el ERP.</p>
+      )}
+
+      {!loading && !error && data.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {data.map((row) => (
+            <div
+              key={`${row.client_code}-${row.instance_code}`}
+              className="flex items-center justify-between rounded-md bg-white/60 px-3 py-2 shadow-sm"
+            >
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-[#4B5563]">
+                  {row.client_code} · {row.instance_code}
+                </span>
+                <span className="text-[11px] text-[#6B7280]">Saldo consolidado</span>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Ingresos</p>
-                <p className="text-sm font-medium text-success">
-                  +{new Intl.NumberFormat("es-ES", {
-                    style: "currency",
-                    currency: data.currency,
-                  }).format(data.income)}
-                </p>
+              <div className="text-sm font-semibold text-[#6C5CE7]">
+                {row.total_balance.toLocaleString("es-ES", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                {row.currency}
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10">
-                <ArrowDownRight className="h-3 w-3 text-destructive" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Gastos</p>
-                <p className="text-sm font-medium text-destructive">
-                  -{new Intl.NumberFormat("es-ES", {
-                    style: "currency",
-                    currency: data.currency,
-                  }).format(data.expenses)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="py-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Conecta tu cuenta para ver datos de tesorería
-          </p>
+          ))}
         </div>
       )}
-    </DashboardCard>
+    </div>
   );
 }
