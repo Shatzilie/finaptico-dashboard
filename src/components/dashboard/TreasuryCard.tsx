@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const CLIENT_OPTIONS = ["CLIENT_001", "CLIENT_002"] as const;
 
 type TreasuryRow = {
   client_code: string;
@@ -10,27 +20,36 @@ type TreasuryRow = {
   currency: string;
 };
 
-const TREASURY_URL = "https://utwhvnafvtardndgkbjn.functions.supabase.co/treasury-feed";
-
 export function TreasuryCard() {
+  const [selectedClient, setSelectedClient] = useState<string>(CLIENT_OPTIONS[0]);
   const [data, setData] = useState<TreasuryRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthError, setIsAuthError] = useState(false);
 
   useEffect(() => {
     async function fetchTreasury() {
       try {
         setIsLoading(true);
         setError(null);
+        setIsAuthError(false);
 
-        const response = await fetch(TREASURY_URL);
+        const { data: responseData, error: invokeError } = await supabase.functions.invoke(
+          "treasury-feed",
+          {
+            body: { client_code: selectedClient },
+          }
+        );
 
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        if (invokeError) {
+          if (invokeError.message?.includes("401") || invokeError.message?.includes("unauthorized")) {
+            setIsAuthError(true);
+            throw new Error("Sesión no válida o caducada, vuelve a iniciar sesión");
+          }
+          throw new Error(invokeError.message);
         }
 
-        const rows: TreasuryRow[] = await response.json();
-        setData(rows);
+        setData(responseData as TreasuryRow[]);
       } catch (e: any) {
         setError(e.message ?? "Error desconocido al cargar tesorería");
       } finally {
@@ -39,15 +58,29 @@ export function TreasuryCard() {
     }
 
     fetchTreasury();
-  }, []);
+  }, [selectedClient]);
 
   return (
     <Card className="animate-fade-in">
-      <CardHeader className="flex flex-row items-center gap-2 pb-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
-          <Wallet className="h-4 w-4 text-primary" />
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
+            <Wallet className="h-4 w-4 text-primary" />
+          </div>
+          <CardTitle className="text-base font-semibold text-foreground">Tesorería</CardTitle>
         </div>
-        <CardTitle className="text-base font-semibold text-foreground">Tesorería</CardTitle>
+        <Select value={selectedClient} onValueChange={setSelectedClient}>
+          <SelectTrigger className="h-8 w-[130px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CLIENT_OPTIONS.map((client) => (
+              <SelectItem key={client} value={client} className="text-xs">
+                {client}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </CardHeader>
       <CardContent>
         {/* Loading state */}
@@ -55,8 +88,16 @@ export function TreasuryCard() {
           <p className="text-sm text-muted-foreground">Cargando tesorería...</p>
         )}
 
-        {/* Error state */}
-        {!isLoading && error && (
+        {/* Error state - Auth specific */}
+        {!isLoading && error && isAuthError && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3">
+            <p className="text-sm font-medium text-destructive">Sesión no válida</p>
+            <p className="text-xs text-destructive/80">{error}</p>
+          </div>
+        )}
+
+        {/* Error state - General */}
+        {!isLoading && error && !isAuthError && (
           <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3">
             <p className="text-sm font-medium text-destructive">No se ha podido cargar la tesorería</p>
             <p className="text-xs text-destructive/80">{error}</p>
