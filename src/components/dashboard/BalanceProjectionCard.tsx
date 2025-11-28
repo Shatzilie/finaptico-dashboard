@@ -9,9 +9,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
 
 const CLIENT_CODE = "CLIENT_001";
-const TIMESERIES_URL = `https://utwhvnafvtardndgkbjn.functions.supabase.co/treasury-timeseries?client_code=${CLIENT_CODE}`;
 
 interface TimeseriesRow {
   client_code: string;
@@ -38,12 +38,19 @@ export function BalanceProjectionCard() {
       try {
         setIsLoading(true);
         setError(null);
-        const res = await fetch(TIMESERIES_URL);
-        if (!res.ok) {
-          throw new Error(`Error ${res.status}: ${res.statusText}`);
+        
+        const { data: responseData, error: invokeError } = await supabase.functions.invoke(
+          "treasury-timeseries",
+          {
+            body: { client_code: CLIENT_CODE },
+          }
+        );
+
+        if (invokeError) {
+          throw new Error(invokeError.message);
         }
-        const json: TimeseriesRow[] = await res.json();
-        setData(json);
+
+        setData(responseData as TimeseriesRow[]);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error desconocido");
       } finally {
