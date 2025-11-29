@@ -114,36 +114,44 @@ export function TreasuryCard() {
         {/* Data table */}
         {!isLoading && !error && data.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="py-2 pr-4 text-left font-medium text-muted-foreground">Cliente</th>
-                  <th className="py-2 pr-4 text-left font-medium text-muted-foreground">Instancia</th>
-                  <th className="py-2 pr-4 text-left font-medium text-muted-foreground">Fecha</th>
-                  <th className="py-2 text-right font-medium text-muted-foreground">Saldo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((row, index) => (
-                  <tr 
-                    key={`${row.client_code}-${row.instance_code}-${index}`}
-                    className="border-b border-border/50 last:border-0"
-                  >
-                    <td className="py-2 pr-4 text-foreground">{row.client_code}</td>
-                    <td className="py-2 pr-4 text-foreground">{row.instance_code}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">
-                      {new Date(row.snapshot_date).toLocaleDateString("es-ES")}
-                    </td>
-                    <td className="py-2 text-right font-semibold text-primary">
-                      {new Intl.NumberFormat("es-ES", { 
-                        style: "currency", 
-                        currency: row.currency 
-                      }).format(Number(row.total_balance))}
-                    </td>
+            {data.filter(row => row.client_code === selectedClient).length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No hay datos de tesorería para el cliente seleccionado.
+              </p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="py-2 pr-4 text-left font-medium text-muted-foreground">Cliente</th>
+                    <th className="py-2 pr-4 text-left font-medium text-muted-foreground">Instancia</th>
+                    <th className="py-2 pr-4 text-left font-medium text-muted-foreground">Fecha</th>
+                    <th className="py-2 text-right font-medium text-muted-foreground">Saldo</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data
+                    .filter(row => row.client_code === selectedClient)
+                    .map((row, index) => (
+                      <tr 
+                        key={`${row.client_code}-${row.instance_code}-${index}`}
+                        className="border-b border-border/50 last:border-0"
+                      >
+                        <td className="py-2 pr-4 text-foreground">{row.client_code}</td>
+                        <td className="py-2 pr-4 text-foreground">{row.instance_code}</td>
+                        <td className="py-2 pr-4 text-muted-foreground">
+                          {new Date(row.snapshot_date).toLocaleDateString("es-ES")}
+                        </td>
+                        <td className="py-2 text-right font-semibold text-primary">
+                          {new Intl.NumberFormat("es-ES", { 
+                            style: "currency", 
+                            currency: row.currency 
+                          }).format(Number(row.total_balance))}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
       </CardContent>
