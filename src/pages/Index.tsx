@@ -1,6 +1,6 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import TreasuryCard from "@/components/dashboard/TreasuryCard";
-import { BalanceProjectionCard } from "@/components/dashboard/BalanceProjectionCard";
+import BalanceProjectionCard from "@/components/dashboard/BalanceProjectionCard";
 import { NextActionsCard } from "@/components/dashboard/NextActionsCard";
 import { TaxCalendarCard } from "@/components/dashboard/TaxCalendarCard";
 
