@@ -10,12 +10,24 @@ import { Alert, AlertDescription } from "../ui/alert";
 
 type TimeseriesPoint = {
   client_code: string;
-  snapshot_date: string; // ISO date
-  total_balance: string | number;
+  instance_code: string;
+  snapshot_date: string; // ISO
+  total_balance?: string | number; // puede venir como string
+  total?: string | number;
+  balance?: string | number;
   currency: string;
 };
 
 const SUPABASE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/treasury-timeseries`;
+
+function parseNumber(raw: unknown): number {
+  if (typeof raw === "number") return raw;
+  if (typeof raw === "string") {
+    const n = parseFloat(raw);
+    if (Number.isFinite(n)) return n;
+  }
+  return 0;
+}
 
 // Llamada a la Edge Function de serie temporal
 async function fetchTreasuryTimeseries(
@@ -28,7 +40,6 @@ async function fetchTreasuryTimeseries(
 
   const url = new URL(SUPABASE_FUNCTION_URL);
 
-  // Dejamos este parámetro listo; si el backend lo ignora, no pasa nada
   if (clientCode) {
     url.searchParams.set("client_code", clientCode);
   }
@@ -64,15 +75,14 @@ export default function BalanceProjectionCard() {
     refetchOnWindowFocus: false,
   });
 
-  // Filtrar serie por cliente y ordenarla por fecha
+  // Filtrar serie por cliente y mapear a puntos numéricos
   const seriesForClient = useMemo(() => {
     if (!data || !selectedClientCode) return [];
 
     return data
       .filter((row) => row.client_code === selectedClientCode)
       .map((row) => {
-        const raw = row.total_balance;
-        const value = typeof raw === "number" ? raw : parseFloat((raw as string | null) ?? "0") || 0;
+        const value = parseNumber(row.total_balance ?? row.total ?? row.balance ?? 0);
 
         const date = new Date(row.snapshot_date);
         const label = date.toLocaleDateString("es-ES", {
@@ -92,6 +102,7 @@ export default function BalanceProjectionCard() {
 
   const hasData = seriesForClient.length > 0;
   const currency = seriesForClient[0]?.currency || "EUR";
+  const lastPoint = hasData ? seriesForClient[seriesForClient.length - 1] : null;
 
   // 1) Error cargando clientes
   if (clientsError) {
@@ -160,7 +171,7 @@ export default function BalanceProjectionCard() {
   }
 
   // 5) Sin datos para ese cliente
-  if (!hasData) {
+  if (!hasData || !lastPoint) {
     return (
       <Card>
         <CardHeader>
@@ -176,7 +187,6 @@ export default function BalanceProjectionCard() {
     );
   }
 
-  // 6) Vista normal con gráfica
   return (
     <Card>
       <CardHeader>
@@ -226,9 +236,7 @@ export default function BalanceProjectionCard() {
         <div className="flex items-baseline justify-between text-xs text-muted-foreground">
           <div>
             <p>Último registro</p>
-            <p className="font-medium">
-              {seriesForClient[seriesForClient.length - 1].date.toLocaleDateString("es-ES")}
-            </p>
+            <p className="font-medium">{lastPoint.date.toLocaleDateString("es-ES")}</p>
           </div>
           <div className="text-right">
             <p>Saldo</p>
@@ -237,7 +245,7 @@ export default function BalanceProjectionCard() {
                 style: "currency",
                 currency,
                 maximumFractionDigits: 2,
-              }).format(seriesForClient[seriesForClient.length - 1].value)}
+              }).format(lastPoint.value)}
             </p>
             {isFetching && <p className="mt-1 text-[11px] text-muted-foreground">Actualizando...</p>}
           </div>
