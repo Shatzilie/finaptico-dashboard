@@ -2,7 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import { RequireAuth } from "./context/AuthContext";
+import LoginPage from "./pages/Login";
 import Index from "./pages/Index";
 import Tesoreria from "./pages/Tesoreria";
 import Proyecciones from "./pages/Proyecciones";
@@ -19,18 +21,26 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/tesoreria" element={<Tesoreria />} />
-          <Route path="/proyecciones" element={<Proyecciones />} />
-          <Route path="/acciones" element={<Acciones />} />
-          <Route path="/calendario" element={<Calendario />} />
-          <Route path="/configuracion" element={<Configuracion />} />
-          <Route path="/ayuda" element={<Ayuda />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/*"
+          element={
+            <RequireAuth>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/tesoreria" element={<Tesoreria />} />
+                <Route path="/proyecciones" element={<Proyecciones />} />
+                <Route path="/acciones" element={<Acciones />} />
+                <Route path="/calendario" element={<Calendario />} />
+                <Route path="/configuracion" element={<Configuracion />} />
+                <Route path="/ayuda" element={<Ayuda />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </RequireAuth>
+          }
+        />
+      </Routes>
     </TooltipProvider>
   </QueryClientProvider>
 );
