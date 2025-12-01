@@ -56,7 +56,7 @@ export function Topbar({ title = "Dashboard" }: TopbarProps) {
               variant="ghost"
               className="flex items-center gap-2 px-2"
             >
-              <div className="hidden flex-col items-end sm:flex">
+              <div className="hidden flex-col items-end gap-1 sm:flex">
                 <span className="text-xs text-muted-foreground">
                   Sesión activa
                 </span>
