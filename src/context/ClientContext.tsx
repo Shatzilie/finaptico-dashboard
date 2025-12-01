@@ -1,14 +1,7 @@
 // src/context/ClientContext.tsx
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useMemo,
-  ReactNode,
-} from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { useAuth } from './AuthContext';
+import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from "react";
+import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "./AuthContext";
 
 export type ErpClient = {
   id: string | number;
@@ -55,9 +48,10 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       const { data, error } = await supabase
-        .from('erp_core.clients')
-        .select('*')
-        .order('code', { ascending: true });
+        .schema("erp_core") // 👈 esquema correcto
+        .from("clients") // 👈 tabla correcta
+        .select("*")
+        .order("code", { ascending: true });
 
       if (cancelled) return;
 
@@ -107,7 +101,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
 export function useClientContext() {
   const ctx = useContext(ClientContext);
   if (!ctx) {
-    throw new Error('useClientContext must be used within a ClientProvider');
+    throw new Error("useClientContext must be used within a ClientProvider");
   }
   return ctx;
 }
