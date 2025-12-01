@@ -1,192 +1,248 @@
-import { useEffect, useState } from "react";
-import { TrendingUp } from "lucide-react";
-import { DashboardCard } from "./DashboardCard";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { supabase } from "@/integrations/supabase/client";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+// src/components/dashboard/BalanceProjectionCard.tsx
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useAuth } from "../../context/AuthContext";
+import { useClientContext } from "../../context/ClientContext";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
+import { Skeleton } from "../ui/skeleton";
+import { Alert, AlertDescription } from "../ui/alert";
 
-const CLIENT_OPTIONS = ["CLIENT_001", "CLIENT_002"] as const;
-
-interface TimeseriesRow {
+type TimeseriesPoint = {
   client_code: string;
-  instance_code: string;
-  snapshot_date: string;
-  balance: string;
+  snapshot_date: string; // ISO date
+  total_balance: string | number;
   currency: string;
+};
+
+const SUPABASE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/treasury-timeseries`;
+
+// Llamada a la Edge Function de serie temporal
+async function fetchTreasuryTimeseries(
+  accessToken: string,
+  clientCode: string | null,
+): Promise<TimeseriesPoint[] | null> {
+  if (!accessToken) {
+    throw new Error("No hay token de sesión");
+  }
+
+  const url = new URL(SUPABASE_FUNCTION_URL);
+
+  // Dejamos este parámetro listo; si el backend lo ignora, no pasa nada
+  if (clientCode) {
+    url.searchParams.set("client_code", clientCode);
+  }
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Error ${res.status}: ${text || "Fallo en treasury-timeseries"}`);
+  }
+
+  const data = (await res.json()) as TimeseriesPoint[] | null;
+  return data;
 }
 
-interface ChartData {
-  date: string;
-  balance: number;
-  formattedDate: string;
-  formattedBalance: string;
-}
+export default function BalanceProjectionCard() {
+  const { session } = useAuth();
+  const { selectedClientId, selectedClient, loading: clientsLoading, error: clientsError } = useClientContext();
 
-export function BalanceProjectionCard() {
-  const [selectedClient, setSelectedClient] = useState<string>(CLIENT_OPTIONS[0]);
-  const [data, setData] = useState<TimeseriesRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const accessToken = session?.access_token ?? null;
+  const selectedClientCode = selectedClient?.code ?? (selectedClient ? String(selectedClient.id) : null);
 
-  useEffect(() => {
-    const fetchTimeseries = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const { data: responseData, error: invokeError } = await supabase.functions.invoke(
-          "treasury-timeseries",
-          {
-            body: { client_code: selectedClient },
-          }
-        );
+  const { data, isLoading, isError, error, isFetching } = useQuery({
+    queryKey: ["treasury-timeseries", selectedClientCode, !!accessToken],
+    queryFn: () => fetchTreasuryTimeseries(accessToken as string, selectedClientCode),
+    enabled: !!accessToken && !!selectedClientId && !!selectedClientCode && !clientsLoading && !clientsError,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
-        if (invokeError) {
-          throw new Error(invokeError.message);
-        }
+  // Filtrar serie por cliente y ordenarla por fecha
+  const seriesForClient = useMemo(() => {
+    if (!data || !selectedClientCode) return [];
 
-        setData(responseData as TimeseriesRow[]);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error desconocido");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    return data
+      .filter((row) => row.client_code === selectedClientCode)
+      .map((row) => {
+        const raw = row.total_balance;
+        const value = typeof raw === "number" ? raw : parseFloat((raw as string | null) ?? "0") || 0;
 
-    fetchTimeseries();
-  }, [selectedClient]);
+        const date = new Date(row.snapshot_date);
+        const label = date.toLocaleDateString("es-ES", {
+          day: "2-digit",
+          month: "2-digit",
+        });
 
-  const chartData: ChartData[] = data
-    .map((row) => ({
-      date: row.snapshot_date,
-      balance: Number(row.balance),
-      formattedDate: new Date(row.snapshot_date).toLocaleDateString("es-ES"),
-      formattedBalance: new Intl.NumberFormat("es-ES", {
-        style: "currency",
-        currency: row.currency,
-      }).format(Number(row.balance)),
-    }))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        return {
+          date,
+          label,
+          value,
+          currency: row.currency || "EUR",
+        };
+      })
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+  }, [data, selectedClientCode]);
 
-  const latestData = chartData.length > 0 ? chartData[chartData.length - 1] : null;
-  const currency = data.length > 0 ? data[0].currency : "EUR";
+  const hasData = seriesForClient.length > 0;
+  const currency = seriesForClient[0]?.currency || "EUR";
 
-  const clientSelector = (
-    <Select value={selectedClient} onValueChange={setSelectedClient}>
-      <SelectTrigger className="h-8 w-[130px] text-xs">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {CLIENT_OPTIONS.map((client) => (
-          <SelectItem key={client} value={client} className="text-xs">
-            {client}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
+  // 1) Error cargando clientes
+  if (clientsError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Proyección de Saldo</CardTitle>
+          <CardDescription>No se ha podido cargar la lista de clientes.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertDescription>{clientsError}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  return (
-    <DashboardCard title="Proyección de Saldo" icon={TrendingUp} action={clientSelector}>
-      {isLoading ? (
-        <div className="flex h-48 items-center justify-center">
-          <p className="text-sm text-muted-foreground">Cargando proyección de saldo…</p>
-        </div>
-      ) : error ? (
-        <div className="flex h-48 flex-col items-center justify-center gap-2">
-          <p className="text-sm font-medium text-destructive">
-            No se ha podido cargar la proyección de saldo
-          </p>
-          <p className="text-xs text-muted-foreground">{error}</p>
-        </div>
-      ) : chartData.length === 0 ? (
-        <div className="flex h-48 items-center justify-center">
+  // 2) Aún cargando clientes o sin cliente elegido
+  if (clientsLoading || !selectedClientId || !selectedClient) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Proyección de Saldo</CardTitle>
+          <CardDescription>Cargando datos del cliente seleccionado...</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-40 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 3) Error al cargar la serie temporal
+  if (isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Proyección de Saldo</CardTitle>
+          <CardDescription>No se ha podido cargar la proyección de saldo de este cliente.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertDescription>{(error as Error)?.message || "Error al recuperar los datos."}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 4) Loading inicial de la serie
+  if (isLoading && !data) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Proyección de Saldo</CardTitle>
+          <CardDescription>Consultando la serie de saldo del cliente...</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-40 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 5) Sin datos para ese cliente
+  if (!hasData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Proyección de Saldo</CardTitle>
+          <CardDescription>Aún no hay suficiente histórico de tesorería para este cliente.</CardDescription>
+        </CardHeader>
+        <CardContent>
           <p className="text-sm text-muted-foreground">
-            Todavía no tengo histórico suficiente para proyectar el saldo.
+            La gráfica se activará en cuanto haya más de un día de datos registrados.
           </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 6) Vista normal con gráfica
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Proyección de Saldo</CardTitle>
+        <CardDescription>
+          Evolución del saldo bancario del cliente seleccionado según los snapshots diarios registrados.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="h-48 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={seriesForClient}>
+              <defs>
+                <linearGradient id="projectionArea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopOpacity={0.8} />
+                  <stop offset="95%" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tickFormatter={(value: number) =>
+                  new Intl.NumberFormat("es-ES", {
+                    style: "currency",
+                    currency,
+                    maximumFractionDigits: 0,
+                  }).format(value)
+                }
+              />
+              <Tooltip
+                formatter={(value: number) =>
+                  new Intl.NumberFormat("es-ES", {
+                    style: "currency",
+                    currency,
+                    maximumFractionDigits: 2,
+                  }).format(value)
+                }
+              />
+              <Area type="monotone" dataKey="value" strokeWidth={2} fillOpacity={1} fill="url(#projectionArea)" />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <XAxis
-                  dataKey="formattedDate"
-                  tick={{ fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tickFormatter={(value) =>
-                    new Intl.NumberFormat("es-ES", {
-                      style: "currency",
-                      currency,
-                      notation: "compact",
-                    }).format(value)
-                  }
-                  tick={{ fontSize: 11 }}
-                  tickLine={false}
-                  axisLine={false}
-                  width={70}
-                />
-                <Tooltip
-                  formatter={(value: number) => [
-                    new Intl.NumberFormat("es-ES", {
-                      style: "currency",
-                      currency,
-                    }).format(value),
-                    "Saldo",
-                  ]}
-                  labelFormatter={(label) => `Fecha: ${label}`}
-                  contentStyle={{
-                    fontSize: 12,
-                    borderRadius: 8,
-                    border: "1px solid hsl(var(--border))",
-                    backgroundColor: "hsl(var(--background))",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="balance"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 4, fill: "hsl(var(--primary))" }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+
+        <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+          <div>
+            <p>Último registro</p>
+            <p className="font-medium">
+              {seriesForClient[seriesForClient.length - 1].date.toLocaleDateString("es-ES")}
+            </p>
           </div>
-          {latestData && (
-            <div className="flex items-center justify-between border-t border-border pt-3">
-              <div>
-                <p className="text-xs text-muted-foreground">Último registro</p>
-                <p className="text-sm font-medium text-foreground">
-                  {latestData.formattedDate}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Saldo</p>
-                <p className="text-sm font-semibold text-foreground">
-                  {latestData.formattedBalance}
-                </p>
-              </div>
-            </div>
-          )}
+          <div className="text-right">
+            <p>Saldo</p>
+            <p className="font-semibold">
+              {new Intl.NumberFormat("es-ES", {
+                style: "currency",
+                currency,
+                maximumFractionDigits: 2,
+              }).format(seriesForClient[seriesForClient.length - 1].value)}
+            </p>
+            {isFetching && <p className="mt-1 text-[11px] text-muted-foreground">Actualizando...</p>}
+          </div>
         </div>
-      )}
-    </DashboardCard>
+      </CardContent>
+    </Card>
   );
 }
