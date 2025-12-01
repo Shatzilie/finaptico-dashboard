@@ -12,13 +12,9 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { Search } from 'lucide-react';
+import ClientSelector from '../ClientSelector';
 
-interface TopbarProps {
-  title?: string;
-}
-
-export function Topbar({ title = "Dashboard" }: TopbarProps) {
+export default function Topbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -28,35 +24,28 @@ export function Topbar({ title = "Dashboard" }: TopbarProps) {
   };
 
   const email = user?.email ?? 'Sin sesión';
-  const initials = email
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = email.slice(0, 2).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-6">
-      <div className="flex items-center gap-4">
-        <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+    <header className="flex h-14 items-center justify-between border-b bg-background px-4">
+      {/* Izquierda: selector global de cliente + búsqueda */}
+      <div className="flex flex-1 items-center gap-3">
+        <ClientSelector />
+        <Input
+          placeholder="Buscar (no funcional todavía)…"
+          className="max-w-sm"
+        />
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Search */}
-        <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar..."
-            className="w-64 pl-9"
-          />
-        </div>
-
-        {/* User Menu */}
+      {/* Derecha: info de usuario + logout */}
+      <div className="flex items-center gap-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               className="flex items-center gap-2 px-2"
             >
-              <div className="hidden flex-col items-end gap-1 sm:flex">
+              <div className="flex flex-col items-end gap-1">
                 <span className="text-xs text-muted-foreground">
                   Sesión activa
                 </span>

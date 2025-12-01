@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { AppSidebar } from "./AppSidebar";
-import { Topbar } from "./Topbar";
+import Topbar from "./Topbar";
 import { cn } from "@/lib/utils";
 import { SidebarProvider, useSidebarContext } from "@/context/SidebarContext";
 
@@ -9,7 +9,7 @@ interface DashboardLayoutProps {
   title?: string;
 }
 
-function DashboardContent({ children, title }: DashboardLayoutProps) {
+function DashboardContent({ children }: DashboardLayoutProps) {
   const { collapsed } = useSidebarContext();
 
   return (
@@ -19,7 +19,7 @@ function DashboardContent({ children, title }: DashboardLayoutProps) {
         "transition-all duration-300",
         collapsed ? "pl-16" : "pl-64"
       )}>
-        <Topbar title={title} />
+        <Topbar />
         <main className="p-6">
           {children}
         </main>
