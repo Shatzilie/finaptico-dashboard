@@ -8,17 +8,15 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui
 import { Skeleton } from "../ui/skeleton";
 import { Alert, AlertDescription } from "../ui/alert";
 
-type TimeseriesPoint = {
+type TreasuryRow = {
   client_code: string;
   instance_code: string;
   snapshot_date: string; // ISO
-  total_balance?: string | number; // puede venir como string
-  total?: string | number;
-  balance?: string | number;
+  total_balance: string | number;
   currency: string;
 };
 
-const SUPABASE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/treasury-timeseries`;
+const SUPABASE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/treasury-feed`;
 
 function parseNumber(raw: unknown): number {
   if (typeof raw === "number") return raw;
@@ -29,11 +27,7 @@ function parseNumber(raw: unknown): number {
   return 0;
 }
 
-// Llamada a la Edge Function de serie temporal
-async function fetchTreasuryTimeseries(
-  accessToken: string,
-  clientCode: string | null,
-): Promise<TimeseriesPoint[] | null> {
+async function fetchTreasury(accessToken: string, clientCode: string | null): Promise<TreasuryRow[] | null> {
   if (!accessToken) {
     throw new Error("No hay token de sesión");
   }
@@ -53,10 +47,10 @@ async function fetchTreasuryTimeseries(
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Error ${res.status}: ${text || "Fallo en treasury-timeseries"}`);
+    throw new Error(`Error ${res.status}: ${text || "Fallo en treasury-feed"}`);
   }
 
-  const data = (await res.json()) as TimeseriesPoint[] | null;
+  const data = (await res.json()) as TreasuryRow[] | null;
   return data;
 }
 
@@ -68,41 +62,48 @@ export default function BalanceProjectionCard() {
   const selectedClientCode = selectedClient?.code ?? (selectedClient ? String(selectedClient.id) : null);
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ["treasury-timeseries", selectedClientCode, !!accessToken],
-    queryFn: () => fetchTreasuryTimeseries(accessToken as string, selectedClientCode),
+    queryKey: ["treasury-projection", selectedClientCode, !!accessToken],
+    queryFn: () => fetchTreasury(accessToken as string, selectedClientCode),
     enabled: !!accessToken && !!selectedClientId && !!selectedClientCode && !clientsLoading && !clientsError,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
 
-  // Filtrar serie por cliente y mapear a puntos numéricos
-  const seriesForClient = useMemo(() => {
+  // Filtramos sólo las filas del cliente seleccionado
+  const rowsForClient: TreasuryRow[] = useMemo(() => {
     if (!data || !selectedClientCode) return [];
-
-    return data
-      .filter((row) => row.client_code === selectedClientCode)
-      .map((row) => {
-        const value = parseNumber(row.total_balance ?? row.total ?? row.balance ?? 0);
-
-        const date = new Date(row.snapshot_date);
-        const label = date.toLocaleDateString("es-ES", {
-          day: "2-digit",
-          month: "2-digit",
-        });
-
-        return {
-          date,
-          label,
-          value,
-          currency: row.currency || "EUR",
-        };
-      })
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
+    return data.filter((row) => row.client_code === selectedClientCode);
   }, [data, selectedClientCode]);
 
-  const hasData = seriesForClient.length > 0;
-  const currency = seriesForClient[0]?.currency || "EUR";
-  const lastPoint = hasData ? seriesForClient[seriesForClient.length - 1] : null;
+  // Por ahora solo tenemos el último snapshot → una “serie” de un punto
+  const series = useMemo(() => {
+    if (!rowsForClient.length) return [];
+
+    // Tomamos el último snapshot por fecha
+    const sorted = [...rowsForClient].sort(
+      (a, b) => new Date(a.snapshot_date).getTime() - new Date(b.snapshot_date).getTime(),
+    );
+    const last = sorted[sorted.length - 1];
+
+    const value = parseNumber(last.total_balance);
+    const date = new Date(last.snapshot_date);
+
+    return [
+      {
+        date,
+        label: date.toLocaleDateString("es-ES", {
+          day: "2-digit",
+          month: "2-digit",
+        }),
+        value,
+        currency: last.currency || "EUR",
+      },
+    ];
+  }, [rowsForClient]);
+
+  const hasData = series.length > 0;
+  const currency = series[0]?.currency || "EUR";
+  const lastPoint = hasData ? series[series.length - 1] : null;
 
   // 1) Error cargando clientes
   if (clientsError) {
@@ -137,7 +138,7 @@ export default function BalanceProjectionCard() {
     );
   }
 
-  // 3) Error al cargar la serie temporal
+  // 3) Error al cargar la serie
   if (isError) {
     return (
       <Card>
@@ -154,7 +155,7 @@ export default function BalanceProjectionCard() {
     );
   }
 
-  // 4) Loading inicial de la serie
+  // 4) Loading inicial
   if (isLoading && !data) {
     return (
       <Card>
@@ -176,11 +177,11 @@ export default function BalanceProjectionCard() {
       <Card>
         <CardHeader>
           <CardTitle>Proyección de Saldo</CardTitle>
-          <CardDescription>Aún no hay suficiente histórico de tesorería para este cliente.</CardDescription>
+          <CardDescription>Aún no hay histórico suficiente de tesorería para este cliente.</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            La gráfica se activará en cuanto haya más de un día de datos registrados.
+            La gráfica se activará en cuanto haya snapshots de tesorería registrados para este cliente.
           </p>
         </CardContent>
       </Card>
@@ -192,13 +193,14 @@ export default function BalanceProjectionCard() {
       <CardHeader>
         <CardTitle>Proyección de Saldo</CardTitle>
         <CardDescription>
-          Evolución del saldo bancario del cliente seleccionado según los snapshots diarios registrados.
+          Evolución del saldo bancario del cliente seleccionado según el último snapshot disponible. Más adelante se
+          alimentará de la serie histórica.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={seriesForClient}>
+            <AreaChart data={series}>
               <defs>
                 <linearGradient id="projectionArea" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopOpacity={0.8} />
