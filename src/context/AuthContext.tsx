@@ -14,6 +14,7 @@ type AuthContextValue = {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -53,10 +54,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const logout = async () => {
+    await supabase.auth.signOut();
+    // El listener onAuthStateChange ya limpia user/session
+  };
+
   const value: AuthContextValue = {
     user,
     session,
     loading,
+    logout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -70,7 +77,6 @@ export function useAuth() {
   return ctx;
 }
 
-// Protected route wrapper
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
