@@ -37,9 +37,9 @@ export function ClientProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Carga de clientes cuando haya usuario
   useEffect(() => {
     if (authLoading) return;
+
     if (!user) {
       setClients([]);
       setSelectedClientId(null);
@@ -55,8 +55,7 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       const { data, error } = await supabase
-        .schema('erp_core')
-        .from('clients')
+        .from('erp_core.clients')
         .select('*')
         .order('code', { ascending: true });
 
@@ -70,10 +69,9 @@ export function ClientProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const list = data ?? [];
+      const list = (data ?? []) as ErpClient[];
       setClients(list);
 
-      // Si no hay cliente seleccionado, escoge el primero
       if (list.length > 0 && selectedClientId == null) {
         setSelectedClientId(list[0].id);
       }
