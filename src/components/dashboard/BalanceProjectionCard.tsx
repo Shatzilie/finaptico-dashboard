@@ -9,13 +9,60 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui
 import { Skeleton } from "../ui/skeleton";
 import { Alert, AlertDescription } from "../ui/alert";
 
-type TreasuryTotalRow = {
+type TreasuryRow = {
   client_code: string;
-  instance_code?: string;
-  snapshot_date: string;
   total_balance: string | number;
   currency: string;
+  // Campos de fecha según la vista
+  snapshot_date?: string;
+  week_start?: string;
+  period_start?: string;
+  month?: string;
 };
+
+type ViewConfig = {
+  viewName: string;
+  dateField: "snapshot_date" | "week_start" | "period_start" | "month";
+  isMonthly: boolean;
+  limit?: number;
+};
+
+/**
+ * Selecciona la vista y campo de fecha según el rango de días.
+ * - ≤30 días: diaria (v_treasury_client_totals)
+ * - 31–60 días: semanal (v_treasury_weekly_client_totals)
+ * - 61–180 días: quincenal (v_treasury_biweekly_client_totals)
+ * - >180 días: mensual (v_treasury_monthly_client_totals), límite 12 puntos
+ */
+function getTreasuryView(daysRange: number): ViewConfig {
+  if (daysRange <= 30) {
+    return {
+      viewName: "v_treasury_client_totals",
+      dateField: "snapshot_date",
+      isMonthly: false,
+    };
+  }
+  if (daysRange <= 60) {
+    return {
+      viewName: "v_treasury_weekly_client_totals",
+      dateField: "week_start",
+      isMonthly: false,
+    };
+  }
+  if (daysRange <= 180) {
+    return {
+      viewName: "v_treasury_biweekly_client_totals",
+      dateField: "period_start",
+      isMonthly: false,
+    };
+  }
+  return {
+    viewName: "v_treasury_monthly_client_totals",
+    dateField: "month",
+    isMonthly: true,
+    limit: 12,
+  };
+}
 
 function parseNumber(raw: unknown): number {
   if (typeof raw === "number") return raw;
@@ -26,19 +73,45 @@ function parseNumber(raw: unknown): number {
   return 0;
 }
 
-async function fetchTreasuryHistory(clientCode: string): Promise<TreasuryTotalRow[]> {
-  const { data, error } = await supabase
+async function fetchTreasuryHistory(
+  clientCode: string,
+  viewConfig: ViewConfig
+): Promise<TreasuryRow[]> {
+  const { viewName, dateField, limit } = viewConfig;
+
+  let query = supabase
     .schema("erp_core")
-    .from("v_treasury_client_totals")
-    .select("snapshot_date, total_balance, currency, client_code")
+    .from(viewName)
+    .select(`${dateField}, total_balance, currency, client_code`)
     .eq("client_code", clientCode)
-    .order("snapshot_date", { ascending: true });
+    .order(dateField, { ascending: true });
+
+  if (limit) {
+    // Para mensual, tomamos los últimos N registros
+    // Primero ordenamos desc para obtener los más recientes, luego invertimos
+    query = supabase
+      .schema("erp_core")
+      .from(viewName)
+      .select(`${dateField}, total_balance, currency, client_code`)
+      .eq("client_code", clientCode)
+      .order(dateField, { ascending: false })
+      .limit(limit);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return (data ?? []) as TreasuryTotalRow[];
+  let rows = (data ?? []) as TreasuryRow[];
+
+  // Si hay límite, revertimos para orden cronológico
+  if (limit && rows.length > 0) {
+    rows = rows.reverse();
+  }
+
+  return rows;
 }
 
 export default function BalanceProjectionCard() {
@@ -48,9 +121,14 @@ export default function BalanceProjectionCard() {
   const accessToken = session?.access_token ?? null;
   const selectedClientCode = selectedClient?.code ?? (selectedClient ? String(selectedClient.id) : null);
 
+  // TODO: Conectar con selector de rango global cuando esté disponible
+  const daysRange = 60; // Valor por defecto: vista semanal
+
+  const viewConfig = useMemo(() => getTreasuryView(daysRange), [daysRange]);
+
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ["treasury-history", selectedClientCode],
-    queryFn: () => fetchTreasuryHistory(selectedClientCode as string),
+    queryKey: ["treasury-history", selectedClientCode, viewConfig.viewName],
+    queryFn: () => fetchTreasuryHistory(selectedClientCode as string, viewConfig),
     enabled: !!accessToken && !!selectedClientId && !!selectedClientCode && !clientsLoading && !clientsError,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -62,19 +140,35 @@ export default function BalanceProjectionCard() {
 
     return data.map((row) => {
       const value = parseNumber(row.total_balance);
-      const date = new Date(row.snapshot_date);
+      
+      // Obtener la fecha del campo correspondiente
+      const dateStr = row[viewConfig.dateField] as string;
+      const date = new Date(dateStr);
+
+      // Formato de label según tipo de vista
+      let label: string;
+      if (viewConfig.isMonthly) {
+        // MMM/YY para mensual
+        label = date.toLocaleDateString("es-ES", {
+          month: "short",
+          year: "2-digit",
+        });
+      } else {
+        // DD/MM para diaria/semanal/quincenal
+        label = date.toLocaleDateString("es-ES", {
+          day: "2-digit",
+          month: "2-digit",
+        });
+      }
 
       return {
         date,
-        label: date.toLocaleDateString("es-ES", {
-          day: "2-digit",
-          month: "2-digit",
-        }),
+        label,
         value,
         currency: row.currency || "EUR",
       };
     });
-  }, [data]);
+  }, [data, viewConfig]);
 
   const hasData = series.length > 0;
   const currency = series[0]?.currency || "EUR";
