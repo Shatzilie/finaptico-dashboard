@@ -164,10 +164,10 @@ export default function BalanceProjectionCard() {
   }
 
   return (
-    <Card>
+    <Card className="font-sans">
       <CardHeader>
-        <CardTitle>Proyección de Saldo</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-[#111827] font-semibold">Proyección de Saldo</CardTitle>
+        <CardDescription className="text-[#4B5563]">
           Evolución histórica del saldo bancario del cliente seleccionado.
         </CardDescription>
       </CardHeader>
@@ -176,17 +176,18 @@ export default function BalanceProjectionCard() {
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={series}>
               <defs>
-                <linearGradient id="projectionArea" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopOpacity={0.8} />
-                  <stop offset="95%" stopOpacity={0} />
+                <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#6C5CE7" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="#6C5CE7" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: "#6B7280", fontSize: 12 }} />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
+                tick={{ fill: "#6B7280", fontSize: 12 }}
                 tickFormatter={(value: number) =>
                   new Intl.NumberFormat("es-ES", {
                     style: "currency",
@@ -203,27 +204,29 @@ export default function BalanceProjectionCard() {
                     maximumFractionDigits: 2,
                   }).format(value)
                 }
+                contentStyle={{ color: "#111827", fontSize: 13 }}
+                labelStyle={{ color: "#4B5563" }}
               />
-              <Area type="monotone" dataKey="value" strokeWidth={2} fillOpacity={1} fill="url(#projectionArea)" />
+              <Area type="monotone" dataKey="value" stroke="#6C5CE7" strokeWidth={2} fillOpacity={1} fill="url(#balanceGradient)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+        <div className="flex items-baseline justify-between text-xs text-[#6B7280]">
           <div>
             <p>Último registro</p>
-            <p className="font-medium">{lastPoint.date.toLocaleDateString("es-ES")}</p>
+            <p className="font-medium text-[#111827]">{lastPoint.date.toLocaleDateString("es-ES")}</p>
           </div>
           <div className="text-right">
             <p>Saldo</p>
-            <p className="font-semibold">
+            <p className="font-semibold text-[#111827]">
               {new Intl.NumberFormat("es-ES", {
                 style: "currency",
                 currency,
                 maximumFractionDigits: 2,
               }).format(lastPoint.value)}
             </p>
-            {isFetching && <p className="mt-1 text-[11px] text-muted-foreground">Actualizando...</p>}
+            {isFetching && <p className="mt-1 text-[11px] text-[#6B7280]">Actualizando...</p>}
           </div>
         </div>
       </CardContent>
