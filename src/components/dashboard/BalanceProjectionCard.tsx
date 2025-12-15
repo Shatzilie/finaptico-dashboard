@@ -28,7 +28,8 @@ function parseNumber(raw: unknown): number {
 
 async function fetchTreasuryHistory(clientCode: string): Promise<TreasuryTotalRow[]> {
   const { data, error } = await supabase
-    .from("erp_treasury.v_treasury_client_totals")
+    .schema("erp_core")
+    .from("v_treasury_client_totals")
     .select("snapshot_date, total_balance, currency, client_code")
     .eq("client_code", clientCode)
     .order("snapshot_date", { ascending: true });
