@@ -4,19 +4,18 @@ import { useQuery } from "@tanstack/react-query";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "../../context/AuthContext";
 import { useClientContext } from "../../context/ClientContext";
+import { supabase } from "../../lib/supabaseClient";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
 import { Alert, AlertDescription } from "../ui/alert";
 
-type TreasuryRow = {
+type TreasuryTotalRow = {
   client_code: string;
-  instance_code: string;
-  snapshot_date: string; // ISO
+  instance_code?: string;
+  snapshot_date: string;
   total_balance: string | number;
   currency: string;
 };
-
-const SUPABASE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/treasury-feed`;
 
 function parseNumber(raw: unknown): number {
   if (typeof raw === "number") return raw;
@@ -27,31 +26,18 @@ function parseNumber(raw: unknown): number {
   return 0;
 }
 
-async function fetchTreasury(accessToken: string, clientCode: string | null): Promise<TreasuryRow[] | null> {
-  if (!accessToken) {
-    throw new Error("No hay token de sesión");
+async function fetchTreasuryHistory(clientCode: string): Promise<TreasuryTotalRow[]> {
+  const { data, error } = await supabase
+    .from("erp_treasury.v_treasury_client_totals")
+    .select("snapshot_date, total_balance, currency, client_code")
+    .eq("client_code", clientCode)
+    .order("snapshot_date", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
   }
 
-  const url = new URL(SUPABASE_FUNCTION_URL);
-
-  if (clientCode) {
-    url.searchParams.set("client_code", clientCode);
-  }
-
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Error ${res.status}: ${text || "Fallo en treasury-feed"}`);
-  }
-
-  const data = (await res.json()) as TreasuryRow[] | null;
-  return data;
+  return (data ?? []) as TreasuryTotalRow[];
 }
 
 export default function BalanceProjectionCard() {
@@ -62,44 +48,32 @@ export default function BalanceProjectionCard() {
   const selectedClientCode = selectedClient?.code ?? (selectedClient ? String(selectedClient.id) : null);
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ["treasury-projection", selectedClientCode, !!accessToken],
-    queryFn: () => fetchTreasury(accessToken as string, selectedClientCode),
+    queryKey: ["treasury-history", selectedClientCode],
+    queryFn: () => fetchTreasuryHistory(selectedClientCode as string),
     enabled: !!accessToken && !!selectedClientId && !!selectedClientCode && !clientsLoading && !clientsError,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
 
-  // Filtramos sólo las filas del cliente seleccionado
-  const rowsForClient: TreasuryRow[] = useMemo(() => {
-    if (!data || !selectedClientCode) return [];
-    return data.filter((row) => row.client_code === selectedClientCode);
-  }, [data, selectedClientCode]);
-
-  // Por ahora solo tenemos el último snapshot → una “serie” de un punto
+  // Construir un punto por cada fila
   const series = useMemo(() => {
-    if (!rowsForClient.length) return [];
+    if (!data || !data.length) return [];
 
-    // Tomamos el último snapshot por fecha
-    const sorted = [...rowsForClient].sort(
-      (a, b) => new Date(a.snapshot_date).getTime() - new Date(b.snapshot_date).getTime(),
-    );
-    const last = sorted[sorted.length - 1];
+    return data.map((row) => {
+      const value = parseNumber(row.total_balance);
+      const date = new Date(row.snapshot_date);
 
-    const value = parseNumber(last.total_balance);
-    const date = new Date(last.snapshot_date);
-
-    return [
-      {
+      return {
         date,
         label: date.toLocaleDateString("es-ES", {
           day: "2-digit",
           month: "2-digit",
         }),
         value,
-        currency: last.currency || "EUR",
-      },
-    ];
-  }, [rowsForClient]);
+        currency: row.currency || "EUR",
+      };
+    });
+  }, [data]);
 
   const hasData = series.length > 0;
   const currency = series[0]?.currency || "EUR";
@@ -161,7 +135,7 @@ export default function BalanceProjectionCard() {
       <Card>
         <CardHeader>
           <CardTitle>Proyección de Saldo</CardTitle>
-          <CardDescription>Consultando la serie de saldo del cliente...</CardDescription>
+          <CardDescription>Consultando la evolución histórica del saldo...</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Skeleton className="h-6 w-32" />
@@ -193,8 +167,7 @@ export default function BalanceProjectionCard() {
       <CardHeader>
         <CardTitle>Proyección de Saldo</CardTitle>
         <CardDescription>
-          Evolución del saldo bancario del cliente seleccionado según el último snapshot disponible. Más adelante se
-          alimentará de la serie histórica.
+          Evolución histórica del saldo bancario del cliente seleccionado.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
