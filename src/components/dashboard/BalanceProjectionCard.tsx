@@ -18,17 +18,19 @@ type TreasuryRow = {
   week_start?: string;
   period_start?: string;
   month?: string;
+  last_snapshot_date?: string;
 };
 
 type ViewConfig = {
   viewName: string;
-  dateField: "snapshot_date" | "week_start" | "period_start" | "month";
+  periodField: "snapshot_date" | "week_start" | "period_start" | "month";
+  dateField: "snapshot_date" | "last_snapshot_date"; // Campo real para la fecha del chart
   isMonthly: boolean;
   limit?: number;
 };
 
 /**
- * Selecciona la vista y campo de fecha según el rango de días.
+ * Selecciona la vista y campos según el rango de días.
  * - ≤30 días: diaria (v_treasury_client_totals)
  * - 31–60 días: semanal (v_treasury_weekly_client_totals)
  * - 61–180 días: quincenal (v_treasury_biweekly_client_totals)
@@ -38,6 +40,7 @@ function getTreasuryView(daysRange: number): ViewConfig {
   if (daysRange <= 30) {
     return {
       viewName: "v_treasury_client_totals",
+      periodField: "snapshot_date",
       dateField: "snapshot_date",
       isMonthly: false,
     };
@@ -45,20 +48,23 @@ function getTreasuryView(daysRange: number): ViewConfig {
   if (daysRange <= 60) {
     return {
       viewName: "v_treasury_weekly_client_totals",
-      dateField: "week_start",
+      periodField: "week_start",
+      dateField: "last_snapshot_date",
       isMonthly: false,
     };
   }
   if (daysRange <= 180) {
     return {
       viewName: "v_treasury_biweekly_client_totals",
-      dateField: "period_start",
+      periodField: "period_start",
+      dateField: "last_snapshot_date",
       isMonthly: false,
     };
   }
   return {
     viewName: "v_treasury_monthly_client_totals",
-    dateField: "month",
+    periodField: "month",
+    dateField: "last_snapshot_date",
     isMonthly: true,
     limit: 12,
   };
@@ -77,24 +83,32 @@ async function fetchTreasuryHistory(
   clientCode: string,
   viewConfig: ViewConfig
 ): Promise<TreasuryRow[]> {
-  const { viewName, dateField, limit } = viewConfig;
+  const { viewName, periodField, dateField, limit } = viewConfig;
+
+  // Construir los campos a seleccionar
+  const selectFields =
+    dateField === "snapshot_date"
+      ? `${periodField}, total_balance, currency, client_code`
+      : `${periodField}, last_snapshot_date, total_balance, currency, client_code`;
+
+  // Ordenar por el campo de fecha real
+  const orderField = dateField;
 
   let query = supabase
     .schema("erp_core")
     .from(viewName)
-    .select(`${dateField}, total_balance, currency, client_code`)
+    .select(selectFields)
     .eq("client_code", clientCode)
-    .order(dateField, { ascending: true });
+    .order(orderField, { ascending: true });
 
   if (limit) {
     // Para mensual, tomamos los últimos N registros
-    // Primero ordenamos desc para obtener los más recientes, luego invertimos
     query = supabase
       .schema("erp_core")
       .from(viewName)
-      .select(`${dateField}, total_balance, currency, client_code`)
+      .select(selectFields)
       .eq("client_code", clientCode)
-      .order(dateField, { ascending: false })
+      .order(orderField, { ascending: false })
       .limit(limit);
   }
 
@@ -104,7 +118,7 @@ async function fetchTreasuryHistory(
     throw new Error(error.message);
   }
 
-  let rows = (data ?? []) as TreasuryRow[];
+  let rows = (data ?? []) as unknown as TreasuryRow[];
 
   // Si hay límite, revertimos para orden cronológico
   if (limit && rows.length > 0) {
@@ -122,7 +136,7 @@ export default function BalanceProjectionCard() {
   const selectedClientCode = selectedClient?.code ?? (selectedClient ? String(selectedClient.id) : null);
 
   // TODO: Conectar con selector de rango global cuando esté disponible
-  const daysRange = 60; // Valor por defecto: vista semanal
+  const daysRange = 30; // Valor por defecto: vista diaria
 
   const viewConfig = useMemo(() => getTreasuryView(daysRange), [daysRange]);
 
@@ -140,22 +154,28 @@ export default function BalanceProjectionCard() {
 
     return data.map((row) => {
       const value = parseNumber(row.total_balance);
-      
-      // Obtener la fecha del campo correspondiente
-      const dateStr = row[viewConfig.dateField] as string;
-      const date = new Date(dateStr);
 
-      // Formato de label según tipo de vista
+      // Fecha real para posición en el chart
+      const dateStr =
+        viewConfig.dateField === "snapshot_date"
+          ? row.snapshot_date
+          : row.last_snapshot_date;
+      const date = new Date(dateStr as string);
+
+      // Label desde el campo de periodo
       let label: string;
       if (viewConfig.isMonthly) {
-        // MMM/YY para mensual
-        label = date.toLocaleDateString("es-ES", {
+        // MMM/YY desde month
+        const monthDate = new Date(row.month as string);
+        label = monthDate.toLocaleDateString("es-ES", {
           month: "short",
           year: "2-digit",
         });
       } else {
-        // DD/MM para diaria/semanal/quincenal
-        label = date.toLocaleDateString("es-ES", {
+        // DD/MM desde el campo de periodo correspondiente
+        const periodStr = row[viewConfig.periodField] as string;
+        const periodDate = new Date(periodStr);
+        label = periodDate.toLocaleDateString("es-ES", {
           day: "2-digit",
           month: "2-digit",
         });
