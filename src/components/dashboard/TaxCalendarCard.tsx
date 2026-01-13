@@ -1,127 +1,189 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Calendar, AlertCircle } from "lucide-react";
 import { DashboardCard } from "./DashboardCard";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useClientContext } from "@/context/ClientContext";
+import { supabase } from "@/lib/supabaseClient";
 
-// Types for Supabase integration
-export interface TaxEvent {
-  id: string;
-  title: string;
-  description?: string;
-  due_date: string;
-  type: "declaracion" | "pago" | "informativo";
-  status: "pendiente" | "completado" | "vencido";
-  model?: string;
-}
-
-interface TaxCalendarCardProps {
-  data?: TaxEvent[] | null;
-  isLoading?: boolean;
-}
-
-const statusColors = {
-  pendiente: "bg-warning/10 text-warning border-warning/20",
-  completado: "bg-success/10 text-success border-success/20",
-  vencido: "bg-destructive/10 text-destructive border-destructive/20",
+type FiscalSnapshot = {
+  client_code: string;
+  instance_code: string;
+  snapshot_generated_at: string;
+  vat_quarter_start: string;
+  vat_output_qtd: number;
+  vat_supported_qtd: number;
+  vat_net_qtd: number;
+  is_year_start: string;
+  is_revenue_ytd: number;
+  is_spend_ytd: number;
+  is_profit_ytd: number;
+  is_tax_rate: number;
+  is_estimated_tax_ytd: number;
+  is_has_revenue_ytd: boolean;
 };
 
-const typeLabels = {
-  declaracion: "Declaración",
-  pago: "Pago",
-  informativo: "Informativo",
-};
+async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot | null> {
+  const { data, error } = await supabase
+    .schema("erp_core")
+    .from("v_dashboard_fiscal_snapshot")
+    .select("*")
+    .eq("client_code", clientCode)
+    .maybeSingle();
 
-export function TaxCalendarCard({ data, isLoading }: TaxCalendarCardProps) {
-  const getDaysUntilDue = (dueDate: string) => {
-    const now = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
+  if (error) {
+    throw new Error(error.message);
+  }
 
-  return (
-    <DashboardCard
-      title="Calendario Fiscal"
-      icon={Calendar}
-      action={
-        <Button variant="ghost" size="sm" className="text-primary">
-          Ver calendario
-        </Button>
-      }
-    >
-      {isLoading ? (
+  return data as FiscalSnapshot | null;
+}
+
+function formatCurrency(value: number, currency = "EUR"): string {
+  return new Intl.NumberFormat("es-ES", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function formatQuarter(dateStr: string): string {
+  const date = new Date(dateStr);
+  const quarter = Math.ceil((date.getMonth() + 1) / 3);
+  return `Q${quarter} ${date.getFullYear()}`;
+}
+
+export function TaxCalendarCard() {
+  const { selectedClient, loading: clientsLoading } = useClientContext();
+  const clientCode = selectedClient?.code ?? null;
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["fiscal-snapshot", clientCode],
+    queryFn: () => fetchFiscalSnapshot(clientCode as string),
+    enabled: !!clientCode && !clientsLoading,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Loading clientes
+  if (clientsLoading) {
+    return (
+      <DashboardCard title="Situación Fiscal" icon={Calendar}>
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center justify-between">
-              <div className="space-y-1">
-                <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-                <div className="h-3 w-20 animate-pulse rounded bg-muted" />
-              </div>
-              <div className="h-6 w-16 animate-pulse rounded bg-muted" />
-            </div>
-          ))}
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
         </div>
-      ) : data && data.length > 0 ? (
-        <div className="space-y-3">
-          {data.map((event) => {
-            const daysUntil = getDaysUntilDue(event.due_date);
-            const isUrgent = daysUntil <= 7 && event.status === "pendiente";
+      </DashboardCard>
+    );
+  }
 
-            return (
-              <div
-                key={event.id}
-                className={cn(
-                  "rounded-lg border border-border p-3",
-                  isUrgent && "border-destructive/50 bg-destructive/5"
-                )}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      {isUrgent && (
-                        <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />
-                      )}
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {event.title}
-                      </p>
-                    </div>
-                    {event.model && (
-                      <p className="text-xs text-muted-foreground">
-                        Modelo {event.model}
-                      </p>
-                    )}
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {new Date(event.due_date).toLocaleDateString("es-ES", {
-                        day: "numeric",
-                        month: "long",
-                      })}
-                      {daysUntil > 0 && event.status === "pendiente" && (
-                        <span className="ml-1">
-                          ({daysUntil} {daysUntil === 1 ? "día" : "días"})
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className={cn("shrink-0 text-xs", statusColors[event.status])}
-                  >
-                    {event.status}
-                  </Badge>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
+  // Sin cliente seleccionado
+  if (!clientCode) {
+    return (
+      <DashboardCard title="Situación Fiscal" icon={Calendar}>
         <div className="py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            No hay eventos fiscales próximos
+            Selecciona un cliente para ver su situación fiscal.
           </p>
         </div>
-      )}
+      </DashboardCard>
+    );
+  }
+
+  // Loading datos fiscales
+  if (isLoading) {
+    return (
+      <DashboardCard title="Situación Fiscal" icon={Calendar}>
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+      </DashboardCard>
+    );
+  }
+
+  // Error
+  if (isError) {
+    return (
+      <DashboardCard title="Situación Fiscal" icon={Calendar}>
+        <div className="py-6 text-center">
+          <AlertCircle className="mx-auto h-8 w-8 text-destructive mb-2" />
+          <p className="text-sm font-medium text-foreground">Error al cargar datos fiscales</p>
+          <p className="text-xs text-muted-foreground mt-1">{(error as Error)?.message}</p>
+        </div>
+      </DashboardCard>
+    );
+  }
+
+  // Sin datos
+  if (!data) {
+    return (
+      <DashboardCard title="Situación Fiscal" icon={Calendar}>
+        <div className="py-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Sin datos fiscales para este cliente.
+          </p>
+        </div>
+      </DashboardCard>
+    );
+  }
+
+  return (
+    <DashboardCard title="Situación Fiscal" icon={Calendar}>
+      <div className="space-y-4">
+        {/* Periodo labels */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>IVA: {formatQuarter(data.vat_quarter_start)}</span>
+          <span>IS: Año {new Date(data.is_year_start).getFullYear()}</span>
+        </div>
+
+        {/* IVA Section */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">IVA Trimestral</p>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-lg border border-border p-2">
+              <p className="text-[10px] text-muted-foreground">Repercutido</p>
+              <p className="text-sm font-semibold text-foreground">{formatCurrency(data.vat_output_qtd)}</p>
+            </div>
+            <div className="rounded-lg border border-border p-2">
+              <p className="text-[10px] text-muted-foreground">Soportado</p>
+              <p className="text-sm font-semibold text-foreground">{formatCurrency(data.vat_supported_qtd)}</p>
+            </div>
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
+              <p className="text-[10px] text-muted-foreground">Neto</p>
+              <p className="text-sm font-semibold text-primary">{formatCurrency(data.vat_net_qtd)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* IS Section */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Impuesto Sociedades (YTD)</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg border border-border p-2">
+              <p className="text-[10px] text-muted-foreground">Tipo impositivo</p>
+              <p className="text-sm font-semibold text-foreground">{formatPercent(data.is_tax_rate)}</p>
+            </div>
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
+              <p className="text-[10px] text-muted-foreground">IS Estimado</p>
+              <p className="text-sm font-semibold text-primary">{formatCurrency(data.is_estimated_tax_ytd)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <p className="text-[10px] text-muted-foreground text-right">
+          Actualizado: {new Date(data.snapshot_generated_at).toLocaleDateString("es-ES")}
+        </p>
+      </div>
     </DashboardCard>
   );
 }
+
+// Keep default export for backwards compatibility
+export default TaxCalendarCard;
