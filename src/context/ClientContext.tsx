@@ -66,12 +66,11 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       try {
-        // 1. Obtener los client_code permitidos para este usuario
+        // 1. Obtener los client_code permitidos para este usuario (via vista con RLS)
         const { data: accessData, error: accessError } = await supabase
           .schema("erp_core")
-          .from("user_client_access")
-          .select("client_code")
-          .eq("user_id", user.id);
+          .from("v_my_clients")
+          .select("client_code");
 
         if (accessError) {
           throw new Error(accessError.message);
