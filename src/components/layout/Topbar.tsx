@@ -17,7 +17,7 @@ import ClientSelector from '../ClientSelector';
 
 export default function Topbar() {
   const { user, logout } = useAuth();
-  const { selectedClient, clients, loading: clientsLoading } = useClientContext();
+  const { selectedClient, canSwitchClient, loading: clientsLoading } = useClientContext();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -30,15 +30,13 @@ export default function Topbar() {
   
   // Nombre de empresa visible (nunca código interno)
   const companyName = getClientDisplayName(selectedClient);
-  
-  // Determinar si mostrar selector (solo si hay múltiples clientes)
-  const showSelector = !clientsLoading && clients.length > 1;
 
   return (
     <header className="flex h-14 items-center justify-between border-b bg-background px-4">
-      {/* Izquierda: selector global de cliente (solo si múltiples) + búsqueda */}
+      {/* Izquierda: selector global de cliente (solo para admins) + búsqueda */}
       <div className="flex flex-1 items-center gap-3">
-        {showSelector && <ClientSelector />}
+        {/* ClientSelector se auto-oculta si el usuario no es admin */}
+        <ClientSelector />
         <Input
           placeholder="Buscar..."
           className="max-w-sm"
