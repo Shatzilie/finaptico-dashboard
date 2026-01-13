@@ -86,13 +86,13 @@ export function NextActionsCard() {
     );
   }
 
-  // Sin cliente seleccionado
+  // Sin cliente seleccionado (no debería ocurrir en cliente final)
   if (!clientCode) {
     return (
       <DashboardCard title="Próximas Acciones" icon={ListChecks}>
         <div className="py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Selecciona un cliente para ver sus acciones pendientes.
+            Cargando acciones pendientes...
           </p>
         </div>
       </DashboardCard>

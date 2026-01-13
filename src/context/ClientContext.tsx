@@ -8,8 +8,18 @@ export type ErpClient = {
   code?: string | null;
   name?: string | null;
   display_name?: string | null;
+  label?: string | null;
   [key: string]: any;
 };
+
+/**
+ * Devuelve el nombre visible del cliente (nunca el código interno).
+ * Prioridad: label > display_name > name > "Mi empresa"
+ */
+export function getClientDisplayName(client: ErpClient | null): string {
+  if (!client) return "Mi empresa";
+  return client.label || client.display_name || client.name || "Mi empresa";
+}
 
 type ClientContextValue = {
   clients: ErpClient[];
