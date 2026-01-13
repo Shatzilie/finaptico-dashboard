@@ -3,10 +3,10 @@ import TreasuryCard from "@/components/dashboard/TreasuryCard";
 import BalanceProjectionCard from "@/components/dashboard/BalanceProjectionCard";
 import { NextActionsCard } from "@/components/dashboard/NextActionsCard";
 import { TaxCalendarCard } from "@/components/dashboard/TaxCalendarCard";
+import { useClientContext } from "@/context/ClientContext";
 
 const Index = () => {
-  // Data states will be populated when connected to Supabase
-  // For now, components show empty states
+  const { canSwitchClient } = useClientContext();
 
   return (
     <DashboardLayout title="Dashboard">
@@ -26,10 +26,12 @@ const Index = () => {
           <TaxCalendarCard />
         </div>
 
-        {/* Next Actions - Full width */}
-        <div className="md:col-span-2 xl:col-span-3">
-          <NextActionsCard />
-        </div>
+        {/* Next Actions - Solo visible para admin */}
+        {canSwitchClient && (
+          <div className="md:col-span-2 xl:col-span-3">
+            <NextActionsCard />
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

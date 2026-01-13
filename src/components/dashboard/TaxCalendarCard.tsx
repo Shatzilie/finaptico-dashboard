@@ -50,6 +50,13 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+function isValidDate(dateStr: string | null | undefined): boolean {
+  if (!dateStr) return false;
+  const date = new Date(dateStr);
+  // Verificar que es una fecha válida y no es 1970 (epoch)
+  return !isNaN(date.getTime()) && date.getFullYear() > 1970;
+}
+
 function formatQuarter(dateStr: string): string {
   const date = new Date(dateStr);
   const quarter = Math.ceil((date.getMonth() + 1) / 3);
@@ -120,13 +127,17 @@ export function TaxCalendarCard() {
     );
   }
 
-  // Sin datos
-  if (!data) {
+  // Sin datos o sin fechas fiscales válidas
+  const hasValidVatDate = isValidDate(data?.vat_quarter_start);
+  const hasValidIsDate = isValidDate(data?.is_year_start);
+  const hasValidFiscalData = data && (hasValidVatDate || hasValidIsDate);
+
+  if (!data || !hasValidFiscalData) {
     return (
       <DashboardCard title="Situación Fiscal" icon={Calendar}>
         <div className="py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            No hay datos fiscales disponibles.
+            Datos fiscales no disponibles todavía
           </p>
         </div>
       </DashboardCard>
@@ -136,10 +147,10 @@ export function TaxCalendarCard() {
   return (
     <DashboardCard title="Situación Fiscal" icon={Calendar}>
       <div className="space-y-4">
-        {/* Periodo labels */}
+        {/* Periodo labels - solo mostrar si las fechas son válidas */}
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>IVA: {formatQuarter(data.vat_quarter_start)}</span>
-          <span>IS: Año {new Date(data.is_year_start).getFullYear()}</span>
+          {hasValidVatDate && <span>IVA: {formatQuarter(data.vat_quarter_start)}</span>}
+          {hasValidIsDate && <span>IS: Año {new Date(data.is_year_start).getFullYear()}</span>}
         </div>
 
         {/* IVA Section */}
