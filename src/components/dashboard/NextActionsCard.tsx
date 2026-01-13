@@ -4,8 +4,7 @@ import { DashboardCard } from "./DashboardCard";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-
-const CLIENT_ID = "CLIENT_001";
+import { useClientContext } from "@/context/ClientContext";
 
 interface ActionItem {
   id: string;
@@ -17,11 +16,22 @@ interface ActionItem {
 }
 
 export function NextActionsCard() {
+  const { selectedClient, loading: clientsLoading } = useClientContext();
   const [data, setData] = useState<ActionItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const clientCode = selectedClient?.code ?? null;
+
   useEffect(() => {
+    // Si no hay cliente seleccionado, no hacer request
+    if (!clientCode) {
+      setData(null);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
+
     const fetchActions = async () => {
       try {
         setIsLoading(true);
@@ -30,7 +40,7 @@ export function NextActionsCard() {
         const { data: responseData, error: invokeError } = await supabase.functions.invoke(
           "client-actions-feed",
           {
-            body: { client_id: CLIENT_ID },
+            body: { client_id: clientCode },
           }
         );
 
@@ -47,7 +57,7 @@ export function NextActionsCard() {
     };
 
     fetchActions();
-  }, []);
+  }, [clientCode]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("es-ES", {
@@ -56,6 +66,38 @@ export function NextActionsCard() {
       year: "numeric",
     });
   };
+
+  // Si aún se cargan clientes, mostrar loading
+  if (clientsLoading) {
+    return (
+      <DashboardCard title="Próximas Acciones" icon={ListChecks}>
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div className="h-5 w-5 animate-pulse rounded-full bg-muted" />
+              <div className="flex-1 space-y-1">
+                <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </DashboardCard>
+    );
+  }
+
+  // Sin cliente seleccionado
+  if (!clientCode) {
+    return (
+      <DashboardCard title="Próximas Acciones" icon={ListChecks}>
+        <div className="py-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Selecciona un cliente para ver sus acciones pendientes.
+          </p>
+        </div>
+      </DashboardCard>
+    );
+  }
 
   return (
     <DashboardCard
@@ -96,7 +138,7 @@ export function NextActionsCard() {
                 <Circle
                   className={cn(
                     "h-5 w-5",
-                    action.priority === "high" ? "text-[#6C5CE7]" : "text-muted-foreground"
+                    action.priority === "high" ? "text-primary" : "text-muted-foreground"
                   )}
                 />
               </div>
