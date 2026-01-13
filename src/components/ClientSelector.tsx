@@ -1,5 +1,5 @@
 // src/components/ClientSelector.tsx
-import { useClientContext } from '../context/ClientContext';
+import { useClientContext, getClientDisplayName } from '../context/ClientContext';
 import {
   Select,
   SelectContent,
@@ -17,6 +17,11 @@ export default function ClientSelector() {
     error,
   } = useClientContext();
 
+  // Si solo hay un cliente o menos, no mostrar el selector
+  if (!loading && !error && clients.length <= 1) {
+    return null;
+  }
+
   const handleChange = (value: string) => {
     if (!value) {
       setSelectedClientId(null);
@@ -27,10 +32,9 @@ export default function ClientSelector() {
 
   const disabled = loading || !!error || clients.length === 0;
 
-  let placeholder = 'Selecciona cliente';
-  if (loading) placeholder = 'Cargando clientes…';
+  let placeholder = 'Selecciona empresa';
+  if (loading) placeholder = 'Cargando...';
   else if (error) placeholder = 'Error al cargar';
-  else if (!loading && clients.length === 0) placeholder = 'Sin clientes';
 
   return (
     <div className="min-w-[220px]">
@@ -43,18 +47,11 @@ export default function ClientSelector() {
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          {clients.map((client) => {
-            const label =
-              client.display_name ||
-              client.name ||
-              client.code ||
-              `Cliente ${client.id}`;
-            return (
-              <SelectItem key={client.id} value={String(client.id)}>
-                {label}
-              </SelectItem>
-            );
-          })}
+          {clients.map((client) => (
+            <SelectItem key={client.id} value={String(client.id)}>
+              {getClientDisplayName(client)}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>

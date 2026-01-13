@@ -1,7 +1,7 @@
 // src/components/dashboard/TreasuryCard.tsx
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useClientContext } from "../../context/ClientContext";
+import { useClientContext, getClientDisplayName } from "../../context/ClientContext";
 import { supabase } from "../../lib/supabaseClient";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
@@ -153,9 +153,9 @@ export default function TreasuryCard() {
             <p className="text-3xl font-semibold tracking-tight">{totalFormatted}</p>
           </div>
           <div className="text-right text-xs text-muted-foreground">
-            <p>Cliente</p>
+            <p>Empresa</p>
             <p className="font-medium">
-              {selectedClient.label || selectedClient.code || selectedClient.id}
+              {getClientDisplayName(selectedClient)}
             </p>
           </div>
         </div>

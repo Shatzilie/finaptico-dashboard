@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Calendar, AlertCircle } from "lucide-react";
 import { DashboardCard } from "./DashboardCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useClientContext } from "@/context/ClientContext";
+import { useClientContext, getClientDisplayName } from "@/context/ClientContext";
 import { supabase } from "@/lib/supabaseClient";
 
 type FiscalSnapshot = {
@@ -81,13 +81,13 @@ export function TaxCalendarCard() {
     );
   }
 
-  // Sin cliente seleccionado
+  // Sin cliente seleccionado (no debería ocurrir en cliente final)
   if (!clientCode) {
     return (
       <DashboardCard title="Situación Fiscal" icon={Calendar}>
         <div className="py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Selecciona un cliente para ver su situación fiscal.
+            Cargando datos fiscales...
           </p>
         </div>
       </DashboardCard>
@@ -126,7 +126,7 @@ export function TaxCalendarCard() {
       <DashboardCard title="Situación Fiscal" icon={Calendar}>
         <div className="py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Sin datos fiscales para este cliente.
+            No hay datos fiscales disponibles.
           </p>
         </div>
       </DashboardCard>

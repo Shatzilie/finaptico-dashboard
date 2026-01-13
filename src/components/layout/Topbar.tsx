@@ -1,6 +1,7 @@
 // src/components/layout/Topbar.tsx
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useClientContext, getClientDisplayName } from '../../context/ClientContext';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import {
@@ -16,6 +17,7 @@ import ClientSelector from '../ClientSelector';
 
 export default function Topbar() {
   const { user, logout } = useAuth();
+  const { selectedClient, clients, loading: clientsLoading } = useClientContext();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -25,19 +27,25 @@ export default function Topbar() {
 
   const email = user?.email ?? 'Sin sesión';
   const initials = email.slice(0, 2).toUpperCase();
+  
+  // Nombre de empresa visible (nunca código interno)
+  const companyName = getClientDisplayName(selectedClient);
+  
+  // Determinar si mostrar selector (solo si hay múltiples clientes)
+  const showSelector = !clientsLoading && clients.length > 1;
 
   return (
     <header className="flex h-14 items-center justify-between border-b bg-background px-4">
-      {/* Izquierda: selector global de cliente + búsqueda */}
+      {/* Izquierda: selector global de cliente (solo si múltiples) + búsqueda */}
       <div className="flex flex-1 items-center gap-3">
-        <ClientSelector />
+        {showSelector && <ClientSelector />}
         <Input
-          placeholder="Buscar (no funcional todavía)…"
+          placeholder="Buscar..."
           className="max-w-sm"
         />
       </div>
 
-      {/* Derecha: info de usuario + logout */}
+      {/* Derecha: empresa + info de usuario + logout */}
       <div className="flex items-center gap-3">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -45,11 +53,11 @@ export default function Topbar() {
               variant="ghost"
               className="flex items-center gap-2 px-2"
             >
-              <div className="flex flex-col items-end gap-1">
-                <span className="text-xs text-muted-foreground">
-                  Sesión activa
+              <div className="flex flex-col items-end gap-0.5">
+                <span className="text-sm font-medium text-foreground">
+                  {companyName}
                 </span>
-                <span className="text-sm font-medium">
+                <span className="text-xs text-muted-foreground">
                   {email}
                 </span>
               </div>
@@ -59,7 +67,7 @@ export default function Topbar() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Cuenta</DropdownMenuLabel>
+            <DropdownMenuLabel>{companyName}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               Cerrar sesión
