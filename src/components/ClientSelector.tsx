@@ -8,6 +8,10 @@ import {
   SelectValue,
 } from './ui/select';
 
+/**
+ * Selector de cliente - Solo visible para usuarios admin (con múltiples clientes).
+ * Usuarios cliente nunca ven este componente.
+ */
 export default function ClientSelector() {
   const {
     clients,
@@ -15,9 +19,15 @@ export default function ClientSelector() {
     setSelectedClientId,
     loading,
     error,
+    canSwitchClient,
   } = useClientContext();
 
-  // Si solo hay un cliente o menos, no mostrar el selector
+  // No renderizar si el usuario no puede cambiar de cliente (rol = client)
+  if (!canSwitchClient) {
+    return null;
+  }
+
+  // No renderizar si hay 1 o menos clientes
   if (!loading && !error && clients.length <= 1) {
     return null;
   }
