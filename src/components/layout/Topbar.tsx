@@ -37,10 +37,12 @@ export default function Topbar() {
       <div className="flex flex-1 items-center gap-3">
         {/* ClientSelector se auto-oculta si el usuario no es admin */}
         <ClientSelector />
-        <Input
-          placeholder="Buscar..."
-          className="max-w-sm"
-        />
+        {canSwitchClient && (
+          <Input
+            placeholder="Buscar..."
+            className="max-w-sm"
+          />
+        )}
       </div>
 
       {/* Derecha: empresa + info de usuario + logout */}
