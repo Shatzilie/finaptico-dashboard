@@ -64,21 +64,27 @@ function formatQuarter(dateStr: string): string {
   return `Q${quarter} ${date.getFullYear()}`;
 }
 
-// Verificar si hay datos numéricos válidos (no null, no undefined, no 0)
-function hasValidNumericData(data: FiscalSnapshot | null): boolean {
+// Verificar si hay base fiscal suficiente (ingresos YTD > 0, fechas válidas, datos significativos)
+function hasSufficientFiscalBasis(data: FiscalSnapshot | null, hasValidVatDate: boolean, hasValidIsDate: boolean): boolean {
   if (!data) return false;
   
-  // Verificar si hay al menos algún valor fiscal significativo
-  const hasVatData = 
+  // Si no hay fechas válidas, no hay base fiscal
+  if (!hasValidVatDate && !hasValidIsDate) return false;
+  
+  // Verificar si hay ingresos YTD (indicador de actividad fiscal real)
+  const hasRevenueYtd = data.is_revenue_ytd !== null && data.is_revenue_ytd !== undefined && data.is_revenue_ytd > 0;
+  
+  // Verificar si hay al menos algún valor fiscal significativo (no solo 0,00)
+  const hasVatActivity = 
     (data.vat_output_qtd !== null && data.vat_output_qtd !== undefined && data.vat_output_qtd !== 0) ||
     (data.vat_supported_qtd !== null && data.vat_supported_qtd !== undefined && data.vat_supported_qtd !== 0) ||
     (data.vat_net_qtd !== null && data.vat_net_qtd !== undefined && data.vat_net_qtd !== 0);
   
-  const hasIsData = 
-    (data.is_estimated_tax_ytd !== null && data.is_estimated_tax_ytd !== undefined && data.is_estimated_tax_ytd !== 0) ||
-    (data.is_tax_rate !== null && data.is_tax_rate !== undefined && data.is_tax_rate !== 0);
+  const hasIsActivity = 
+    (data.is_estimated_tax_ytd !== null && data.is_estimated_tax_ytd !== undefined && data.is_estimated_tax_ytd !== 0);
   
-  return hasVatData || hasIsData;
+  // Hay base suficiente si hay ingresos YTD O si hay actividad fiscal real
+  return hasRevenueYtd || hasVatActivity || hasIsActivity;
 }
 
 export function TaxCalendarCard() {
@@ -148,14 +154,12 @@ export function TaxCalendarCard() {
   // Validación de fechas
   const hasValidVatDate = isValidDate(data?.vat_quarter_start);
   const hasValidIsDate = isValidDate(data?.is_year_start);
-  const hasValidDates = hasValidVatDate || hasValidIsDate;
   
-  // Validación de datos numéricos (evitar mostrar solo 0,00 €)
-  const hasNumericData = hasValidNumericData(data);
-  const hasValidFiscalData = data && hasValidDates && hasNumericData;
+  // Validación de base fiscal suficiente (modo cliente no debe ver 0,00 € sin actividad real)
+  const hasFiscalBasis = hasSufficientFiscalBasis(data, hasValidVatDate, hasValidIsDate);
 
-  // Sin datos o sin fechas/valores fiscales válidos - solo mostrar mensaje
-  if (!data || !hasValidFiscalData) {
+  // Sin datos o sin base fiscal válida - solo mostrar mensaje
+  if (!data || !hasFiscalBasis) {
     return (
       <DashboardCard title="Situación Fiscal" icon={Calendar}>
         <div className="py-8 text-center">
