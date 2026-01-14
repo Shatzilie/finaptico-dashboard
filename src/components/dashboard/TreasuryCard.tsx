@@ -31,7 +31,7 @@ async function fetchTreasurySnapshot(clientCode: string): Promise<TreasurySnapsh
 }
 
 export default function TreasuryCard() {
-  const { selectedClientId, selectedClient, loading: clientsLoading, error: clientsError } = useClientContext();
+  const { selectedClientId, selectedClient, loading: clientsLoading, error: clientsError, canSwitchClient } = useClientContext();
   const clientCode = selectedClient?.code ?? null;
 
   const { data, isLoading, isError, error } = useQuery({
@@ -52,13 +52,20 @@ export default function TreasuryCard() {
     }).format(balance);
   }, [data]);
 
+  // Textos adaptativos según modo
+  const title = canSwitchClient ? "Tesorería" : "Tesorería hoy";
+  const description = canSwitchClient 
+    ? "Saldo total actual del cliente seleccionado." 
+    : "Saldo total en cuentas (actualizado)";
+  const dateLabel = canSwitchClient ? "Fecha snapshot" : "Actualizado";
+
   // 1) Error cargando clientes
   if (clientsError) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Tesorería</CardTitle>
-          <CardDescription>No se ha podido cargar la lista de clientes.</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>No se ha podido cargar la información.</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
@@ -74,8 +81,8 @@ export default function TreasuryCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Tesorería</CardTitle>
-          <CardDescription>Cargando datos del cliente seleccionado...</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>Cargando datos...</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Skeleton className="h-8 w-40" />
@@ -91,8 +98,8 @@ export default function TreasuryCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Tesorería</CardTitle>
-          <CardDescription>No se ha podido cargar la tesorería de este cliente.</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>No se ha podido cargar la tesorería.</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
@@ -108,8 +115,8 @@ export default function TreasuryCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Tesorería</CardTitle>
-          <CardDescription>Consultando el saldo bancario del cliente...</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>Consultando el saldo bancario...</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Skeleton className="h-8 w-40" />
@@ -125,12 +132,12 @@ export default function TreasuryCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Tesorería</CardTitle>
-          <CardDescription>No hay datos de tesorería disponibles para este cliente.</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>No hay datos de tesorería disponibles.</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Aún no se han registrado snapshots de tesorería para este cliente en la base de datos.
+            Aún no se han registrado datos de tesorería.
           </p>
         </CardContent>
       </Card>
@@ -141,10 +148,8 @@ export default function TreasuryCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tesorería</CardTitle>
-        <CardDescription>
-          Saldo total actual del cliente seleccionado.
-        </CardDescription>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-baseline justify-between gap-4">
@@ -152,16 +157,19 @@ export default function TreasuryCard() {
             <p className="text-xs uppercase text-muted-foreground">Saldo bancario total</p>
             <p className="text-3xl font-semibold tracking-tight">{totalFormatted}</p>
           </div>
-          <div className="text-right text-xs text-muted-foreground">
-            <p>Empresa</p>
-            <p className="font-medium">
-              {getClientDisplayName(selectedClient)}
-            </p>
-          </div>
+          {/* Solo mostrar bloque empresa en modo admin */}
+          {canSwitchClient && (
+            <div className="text-right text-xs text-muted-foreground">
+              <p>Empresa</p>
+              <p className="font-medium">
+                {getClientDisplayName(selectedClient)}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-3">
-          <span>Fecha snapshot</span>
+          <span>{dateLabel}</span>
           <span className="font-medium">
             {new Date(data.snapshot_date).toLocaleDateString("es-ES")}
           </span>

@@ -13,22 +13,33 @@ import { NavLink } from "@/components/NavLink";
 import logo from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 import { useSidebarContext } from "@/context/SidebarContext";
+import { useClientContext } from "@/context/ClientContext";
 
 const mainNavItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Tesorería", url: "/tesoreria", icon: Wallet },
-  { title: "Proyecciones", url: "/proyecciones", icon: TrendingUp },
-  { title: "Acciones", url: "/acciones", icon: ListChecks },
-  { title: "Calendario Fiscal", url: "/calendario", icon: Calendar },
+  { title: "Dashboard", url: "/", icon: LayoutDashboard, clientVisible: true },
+  { title: "Tesorería", url: "/tesoreria", icon: Wallet, clientVisible: false },
+  { title: "Proyecciones", url: "/proyecciones", icon: TrendingUp, clientVisible: false },
+  { title: "Acciones", url: "/acciones", icon: ListChecks, clientVisible: false },
+  { title: "Calendario Fiscal", url: "/calendario", icon: Calendar, clientVisible: false },
 ];
 
 const secondaryNavItems = [
-  { title: "Configuración", url: "/configuracion", icon: Settings },
-  { title: "Ayuda", url: "/ayuda", icon: HelpCircle },
+  { title: "Configuración", url: "/configuracion", icon: Settings, clientVisible: false },
+  { title: "Ayuda", url: "/ayuda", icon: HelpCircle, clientVisible: true },
 ];
 
 export function AppSidebar() {
   const { collapsed, setCollapsed } = useSidebarContext();
+  const { canSwitchClient } = useClientContext();
+
+  // Filtrar items según el modo (admin ve todo, cliente solo los marcados clientVisible)
+  const visibleMainItems = canSwitchClient 
+    ? mainNavItems 
+    : mainNavItems.filter(item => item.clientVisible);
+  
+  const visibleSecondaryItems = canSwitchClient 
+    ? secondaryNavItems 
+    : secondaryNavItems.filter(item => item.clientVisible);
 
   return (
     <aside
@@ -58,7 +69,7 @@ export function AppSidebar() {
         {/* Main Navigation */}
         <nav className="flex-1 space-y-1 px-3 py-4">
           <div className="space-y-1">
-            {mainNavItems.map((item) => (
+            {visibleMainItems.map((item) => (
               <NavLink
                 key={item.title}
                 to={item.url}
@@ -77,24 +88,26 @@ export function AppSidebar() {
         </nav>
 
         {/* Secondary Navigation */}
-        <div className="border-t border-border px-3 py-4">
-          <div className="space-y-1">
-            {secondaryNavItems.map((item) => (
-              <NavLink
-                key={item.title}
-                to={item.url}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground",
-                  collapsed && "justify-center px-2"
-                )}
-                activeClassName="bg-accent text-primary"
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{item.title}</span>}
-              </NavLink>
-            ))}
+        {visibleSecondaryItems.length > 0 && (
+          <div className="border-t border-border px-3 py-4">
+            <div className="space-y-1">
+              {visibleSecondaryItems.map((item) => (
+                <NavLink
+                  key={item.title}
+                  to={item.url}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground",
+                    collapsed && "justify-center px-2"
+                  )}
+                  activeClassName="bg-accent text-primary"
+                >
+                  <item.icon className="h-5 w-5 shrink-0" />
+                  {!collapsed && <span>{item.title}</span>}
+                </NavLink>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </aside>
   );
