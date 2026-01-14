@@ -1,7 +1,7 @@
 // src/components/dashboard/BalanceProjectionCard.tsx
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "../../context/AuthContext";
 import { useClientContext } from "../../context/ClientContext";
 import { supabase } from "../../lib/supabaseClient";
@@ -18,24 +18,24 @@ type TreasuryRow = {
   week_start?: string;
   period_start?: string;
   month?: string;
+  // Campo opcional para fecha real de último snapshot
   last_snapshot_date?: string;
 };
 
 type ViewConfig = {
   viewName: string;
-  periodField: "snapshot_date" | "week_start" | "period_start" | "month";
-  dateField: "snapshot_date" | "last_snapshot_date"; // Campo real para la fecha del chart
+  periodField: keyof TreasuryRow;
+  dateField: keyof TreasuryRow;
   isMonthly: boolean;
   limit?: number;
 };
 
-/**
- * Selecciona la vista y campos según el rango de días.
- * - ≤30 días: diaria (v_treasury_client_totals)
- * - 31–60 días: semanal (v_treasury_weekly_client_totals)
- * - 61–180 días: quincenal (v_treasury_biweekly_client_totals)
- * - >180 días: mensual (v_treasury_monthly_client_totals), límite 12 puntos
- */
+type ChartPoint = {
+  label: string;
+  value: number;
+  date: Date;
+};
+
 function getTreasuryView(daysRange: number): ViewConfig {
   if (daysRange <= 30) {
     return {
@@ -71,10 +71,10 @@ function getTreasuryView(daysRange: number): ViewConfig {
 }
 
 function parseNumber(raw: unknown): number {
-  if (typeof raw === "number") return raw;
+  if (typeof raw === "number" && isFinite(raw)) return raw;
   if (typeof raw === "string") {
-    const n = parseFloat(raw);
-    if (Number.isFinite(n)) return n;
+    const parsed = parseFloat(raw);
+    if (isFinite(parsed)) return parsed;
   }
   return 0;
 }
@@ -83,33 +83,17 @@ async function fetchTreasuryHistory(
   clientCode: string,
   viewConfig: ViewConfig
 ): Promise<TreasuryRow[]> {
-  const { viewName, periodField, dateField, limit } = viewConfig;
-
-  // Construir los campos a seleccionar
-  const selectFields =
-    dateField === "snapshot_date"
-      ? `${periodField}, total_balance, currency, client_code`
-      : `${periodField}, last_snapshot_date, total_balance, currency, client_code`;
-
-  // Ordenar por el campo de fecha real
-  const orderField = dateField;
+  const { viewName, periodField, limit } = viewConfig;
 
   let query = supabase
     .schema("erp_core")
     .from(viewName)
-    .select(selectFields)
+    .select("*")
     .eq("client_code", clientCode)
-    .order(orderField, { ascending: true });
+    .order(periodField as string, { ascending: true });
 
   if (limit) {
-    // Para mensual, tomamos los últimos N registros
-    query = supabase
-      .schema("erp_core")
-      .from(viewName)
-      .select(selectFields)
-      .eq("client_code", clientCode)
-      .order(orderField, { ascending: false })
-      .limit(limit);
+    query = query.limit(limit);
   }
 
   const { data, error } = await query;
@@ -118,19 +102,18 @@ async function fetchTreasuryHistory(
     throw new Error(error.message);
   }
 
-  let rows = (data ?? []) as unknown as TreasuryRow[];
-
-  // Si hay límite, revertimos para orden cronológico
-  if (limit && rows.length > 0) {
-    rows = rows.reverse();
-  }
-
-  return rows;
+  return (data ?? []) as TreasuryRow[];
 }
 
 export default function BalanceProjectionCard() {
   const { session } = useAuth();
-  const { selectedClientId, selectedClient, loading: clientsLoading, error: clientsError } = useClientContext();
+  const {
+    selectedClientId,
+    selectedClient,
+    loading: clientsLoading,
+    error: clientsError,
+    canSwitchClient,
+  } = useClientContext();
 
   const accessToken = session?.access_token ?? null;
   const selectedClientCode = selectedClient?.code ?? (selectedClient ? String(selectedClient.id) : null);
@@ -143,26 +126,24 @@ export default function BalanceProjectionCard() {
   const { data, isLoading, isError, error, isFetching } = useQuery({
     queryKey: ["treasury-history", selectedClientCode, viewConfig.viewName],
     queryFn: () => fetchTreasuryHistory(selectedClientCode as string, viewConfig),
-    enabled: !!accessToken && !!selectedClientId && !!selectedClientCode && !clientsLoading && !clientsError,
+    enabled: !!accessToken && !!selectedClientCode && !clientsLoading && !clientsError,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
 
-  // Construir un punto por cada fila
-  const series = useMemo(() => {
-    if (!data || !data.length) return [];
+  // Textos adaptativos según modo
+  const title = canSwitchClient ? "Proyección de Saldo" : "Evolución de tesorería";
+  const description = canSwitchClient
+    ? "Evolución histórica del saldo bancario del cliente seleccionado."
+    : "Histórico para ver tendencia, no es una previsión";
+  const dateLabel = canSwitchClient ? "Último registro" : "Actualizado";
+
+  // Procesar datos para el gráfico
+  const series: ChartPoint[] = useMemo(() => {
+    if (!data || data.length === 0) return [];
 
     return data.map((row) => {
-      const value = parseNumber(row.total_balance);
-
-      // Fecha real para posición en el chart
-      const dateStr =
-        viewConfig.dateField === "snapshot_date"
-          ? row.snapshot_date
-          : row.last_snapshot_date;
-      const date = new Date(dateStr as string);
-
-      // Label desde el campo de periodo
+      const balance = parseNumber(row.total_balance);
       let label: string;
       if (viewConfig.isMonthly) {
         // MMM/YY desde month
@@ -181,26 +162,29 @@ export default function BalanceProjectionCard() {
         });
       }
 
-      return {
-        date,
-        label,
-        value,
-        currency: row.currency || "EUR",
-      };
+      // Fecha para ordenar y mostrar en tooltip
+      const dateField = row[viewConfig.dateField] ?? row[viewConfig.periodField];
+      const date = new Date(dateField as string);
+
+      return { label, value: balance, date };
     });
   }, [data, viewConfig]);
 
-  const hasData = series.length > 0;
-  const currency = series[0]?.currency || "EUR";
-  const lastPoint = hasData ? series[series.length - 1] : null;
+  // Último punto para mostrar en footer
+  const lastPoint: ChartPoint = series.length > 0
+    ? series[series.length - 1]
+    : { label: "-", value: 0, date: new Date() };
+
+  // Moneda del cliente
+  const currency = data?.[0]?.currency ?? "EUR";
 
   // 1) Error cargando clientes
   if (clientsError) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Proyección de Saldo</CardTitle>
-          <CardDescription>No se ha podido cargar la lista de clientes.</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>No se ha podido cargar la información.</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
@@ -216,8 +200,8 @@ export default function BalanceProjectionCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Proyección de Saldo</CardTitle>
-          <CardDescription>Cargando datos del cliente seleccionado...</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>Cargando datos...</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Skeleton className="h-6 w-32" />
@@ -227,13 +211,13 @@ export default function BalanceProjectionCard() {
     );
   }
 
-  // 3) Error al cargar la serie
+  // 3) Error al cargar historial
   if (isError) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Proyección de Saldo</CardTitle>
-          <CardDescription>No se ha podido cargar la proyección de saldo de este cliente.</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>No se ha podido cargar el historial.</CardDescription>
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
@@ -245,12 +229,12 @@ export default function BalanceProjectionCard() {
   }
 
   // 4) Loading inicial
-  if (isLoading && !data) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Proyección de Saldo</CardTitle>
-          <CardDescription>Consultando la evolución histórica del saldo...</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>Consultando historial...</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <Skeleton className="h-6 w-32" />
@@ -260,29 +244,30 @@ export default function BalanceProjectionCard() {
     );
   }
 
-  // 5) Sin datos para ese cliente
-  if (!hasData || !lastPoint) {
+  // 5) Sin datos
+  if (!data || data.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Proyección de Saldo</CardTitle>
-          <CardDescription>Aún no hay histórico suficiente de tesorería para este cliente.</CardDescription>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>No hay datos históricos disponibles.</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            La gráfica se activará en cuanto haya snapshots de tesorería registrados para este cliente.
+            Aún no hay registros de tesorería.
           </p>
         </CardContent>
       </Card>
     );
   }
 
+  // 6) Vista normal con gráfico
   return (
     <Card className="font-sans">
       <CardHeader>
-        <CardTitle className="text-[#111827] font-semibold">Proyección de Saldo</CardTitle>
-        <CardDescription className="text-[#4B5563]">
-          Evolución histórica del saldo bancario del cliente seleccionado.
+        <CardTitle className="text-foreground font-semibold">{title}</CardTitle>
+        <CardDescription className="text-muted-foreground">
+          {description}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -291,17 +276,17 @@ export default function BalanceProjectionCard() {
             <AreaChart data={series}>
               <defs>
                 <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6C5CE7" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#6C5CE7" stopOpacity={0} />
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: "#6B7280", fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tick={{ fill: "#6B7280", fontSize: 12 }}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                 tickFormatter={(value: number) =>
                   new Intl.NumberFormat("es-ES", {
                     style: "currency",
@@ -318,29 +303,29 @@ export default function BalanceProjectionCard() {
                     maximumFractionDigits: 2,
                   }).format(value)
                 }
-                contentStyle={{ color: "#111827", fontSize: 13 }}
-                labelStyle={{ color: "#4B5563" }}
+                contentStyle={{ color: "hsl(var(--foreground))", fontSize: 13 }}
+                labelStyle={{ color: "hsl(var(--muted-foreground))" }}
               />
-              <Area type="monotone" dataKey="value" stroke="#6C5CE7" strokeWidth={2} fillOpacity={1} fill="url(#balanceGradient)" />
+              <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#balanceGradient)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="flex items-baseline justify-between text-xs text-[#6B7280]">
+        <div className="flex items-baseline justify-between text-xs text-muted-foreground">
           <div>
-            <p>Último registro</p>
-            <p className="font-medium text-[#111827]">{lastPoint.date.toLocaleDateString("es-ES")}</p>
+            <p>{dateLabel}</p>
+            <p className="font-medium text-foreground">{lastPoint.date.toLocaleDateString("es-ES")}</p>
           </div>
           <div className="text-right">
             <p>Saldo</p>
-            <p className="font-semibold text-[#111827]">
+            <p className="font-semibold text-foreground">
               {new Intl.NumberFormat("es-ES", {
                 style: "currency",
                 currency,
                 maximumFractionDigits: 2,
               }).format(lastPoint.value)}
             </p>
-            {isFetching && <p className="mt-1 text-[11px] text-[#6B7280]">Actualizando...</p>}
+            {isFetching && <p className="mt-1 text-[11px] text-muted-foreground">Actualizando...</p>}
           </div>
         </div>
       </CardContent>

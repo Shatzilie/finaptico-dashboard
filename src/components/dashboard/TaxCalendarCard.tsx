@@ -1,9 +1,8 @@
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, AlertCircle } from "lucide-react";
 import { DashboardCard } from "./DashboardCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useClientContext, getClientDisplayName } from "@/context/ClientContext";
+import { useClientContext } from "@/context/ClientContext";
 import { supabase } from "@/lib/supabaseClient";
 
 type FiscalSnapshot = {
@@ -38,7 +37,8 @@ async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot |
   return data as FiscalSnapshot | null;
 }
 
-function formatCurrency(value: number, currency = "EUR"): string {
+function formatCurrency(value: number | null | undefined, currency = "EUR"): string {
+  if (value === null || value === undefined) return "-";
   return new Intl.NumberFormat("es-ES", {
     style: "currency",
     currency,
@@ -46,7 +46,8 @@ function formatCurrency(value: number, currency = "EUR"): string {
   }).format(value);
 }
 
-function formatPercent(value: number): string {
+function formatPercent(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "-";
   return `${(value * 100).toFixed(1)}%`;
 }
 
@@ -63,8 +64,25 @@ function formatQuarter(dateStr: string): string {
   return `Q${quarter} ${date.getFullYear()}`;
 }
 
+// Verificar si hay datos numéricos válidos (no null, no undefined, no 0)
+function hasValidNumericData(data: FiscalSnapshot | null): boolean {
+  if (!data) return false;
+  
+  // Verificar si hay al menos algún valor fiscal significativo
+  const hasVatData = 
+    (data.vat_output_qtd !== null && data.vat_output_qtd !== undefined && data.vat_output_qtd !== 0) ||
+    (data.vat_supported_qtd !== null && data.vat_supported_qtd !== undefined && data.vat_supported_qtd !== 0) ||
+    (data.vat_net_qtd !== null && data.vat_net_qtd !== undefined && data.vat_net_qtd !== 0);
+  
+  const hasIsData = 
+    (data.is_estimated_tax_ytd !== null && data.is_estimated_tax_ytd !== undefined && data.is_estimated_tax_ytd !== 0) ||
+    (data.is_tax_rate !== null && data.is_tax_rate !== undefined && data.is_tax_rate !== 0);
+  
+  return hasVatData || hasIsData;
+}
+
 export function TaxCalendarCard() {
-  const { selectedClient, loading: clientsLoading } = useClientContext();
+  const { selectedClient, loading: clientsLoading, canSwitchClient } = useClientContext();
   const clientCode = selectedClient?.code ?? null;
 
   const { data, isLoading, isError, error } = useQuery({
@@ -127,11 +145,16 @@ export function TaxCalendarCard() {
     );
   }
 
-  // Sin datos o sin fechas fiscales válidas
+  // Validación de fechas
   const hasValidVatDate = isValidDate(data?.vat_quarter_start);
   const hasValidIsDate = isValidDate(data?.is_year_start);
-  const hasValidFiscalData = data && (hasValidVatDate || hasValidIsDate);
+  const hasValidDates = hasValidVatDate || hasValidIsDate;
+  
+  // Validación de datos numéricos (evitar mostrar solo 0,00 €)
+  const hasNumericData = hasValidNumericData(data);
+  const hasValidFiscalData = data && hasValidDates && hasNumericData;
 
+  // Sin datos o sin fechas/valores fiscales válidos - solo mostrar mensaje
   if (!data || !hasValidFiscalData) {
     return (
       <DashboardCard title="Situación Fiscal" icon={Calendar}>
@@ -144,6 +167,9 @@ export function TaxCalendarCard() {
     );
   }
 
+  // Texto de actualización solo si la fecha es válida
+  const hasValidGeneratedDate = isValidDate(data.snapshot_generated_at);
+
   return (
     <DashboardCard title="Situación Fiscal" icon={Calendar}>
       <div className="space-y-4">
@@ -153,48 +179,55 @@ export function TaxCalendarCard() {
           {hasValidIsDate && <span>IS: Año {new Date(data.is_year_start).getFullYear()}</span>}
         </div>
 
-        {/* IVA Section */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">IVA Trimestral</p>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-lg border border-border p-2">
-              <p className="text-[10px] text-muted-foreground">Repercutido</p>
-              <p className="text-sm font-semibold text-foreground">{formatCurrency(data.vat_output_qtd)}</p>
-            </div>
-            <div className="rounded-lg border border-border p-2">
-              <p className="text-[10px] text-muted-foreground">Soportado</p>
-              <p className="text-sm font-semibold text-foreground">{formatCurrency(data.vat_supported_qtd)}</p>
-            </div>
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
-              <p className="text-[10px] text-muted-foreground">Neto</p>
-              <p className="text-sm font-semibold text-primary">{formatCurrency(data.vat_net_qtd)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* IS Section */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Impuesto Sociedades (YTD)</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg border border-border p-2">
-              <p className="text-[10px] text-muted-foreground">Tipo impositivo</p>
-              <p className="text-sm font-semibold text-foreground">{formatPercent(data.is_tax_rate)}</p>
-            </div>
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
-              <p className="text-[10px] text-muted-foreground">IS Estimado</p>
-              <p className="text-sm font-semibold text-primary">{formatCurrency(data.is_estimated_tax_ytd)}</p>
+        {/* IVA Section - solo si hay fecha válida */}
+        {hasValidVatDate && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              IVA (trimestre actual)
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-lg border border-border p-2">
+                <p className="text-[10px] text-muted-foreground">Repercutido</p>
+                <p className="text-sm font-semibold text-foreground">{formatCurrency(data.vat_output_qtd)}</p>
+              </div>
+              <div className="rounded-lg border border-border p-2">
+                <p className="text-[10px] text-muted-foreground">Soportado</p>
+                <p className="text-sm font-semibold text-foreground">{formatCurrency(data.vat_supported_qtd)}</p>
+              </div>
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
+                <p className="text-[10px] text-muted-foreground">Neto</p>
+                <p className="text-sm font-semibold text-primary">{formatCurrency(data.vat_net_qtd)}</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Footer */}
-        <p className="text-[10px] text-muted-foreground text-right">
-          Actualizado: {new Date(data.snapshot_generated_at).toLocaleDateString("es-ES")}
-        </p>
+        {/* IS Section - solo si hay fecha válida */}
+        {hasValidIsDate && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Impuesto de Sociedades (YTD)
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border p-2">
+                <p className="text-[10px] text-muted-foreground">Tipo impositivo</p>
+                <p className="text-sm font-semibold text-foreground">{formatPercent(data.is_tax_rate)}</p>
+              </div>
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
+                <p className="text-[10px] text-muted-foreground">IS Estimado</p>
+                <p className="text-sm font-semibold text-primary">{formatCurrency(data.is_estimated_tax_ytd)}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer - solo mostrar si hay fecha válida de generación */}
+        {hasValidGeneratedDate && (
+          <p className="text-[10px] text-muted-foreground text-right">
+            Actualizado: {new Date(data.snapshot_generated_at).toLocaleDateString("es-ES")}
+          </p>
+        )}
       </div>
     </DashboardCard>
   );
 }
-
-// Keep default export for backwards compatibility
-export default TaxCalendarCard;
