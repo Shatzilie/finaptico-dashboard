@@ -56,7 +56,8 @@ export default function TreasuryCard() {
   const title = canSwitchClient ? "Tesorería" : "Tesorería hoy";
   const description = canSwitchClient 
     ? "Saldo total actual del cliente seleccionado." 
-    : "Saldo total en cuentas (actualizado)";
+    : "Saldo total en cuentas según información disponible";
+  const amountLabel = canSwitchClient ? "Saldo bancario total" : "Saldo bancario total";
   const dateLabel = canSwitchClient ? "Fecha snapshot" : "Actualizado";
 
   // 1) Error cargando clientes
@@ -154,7 +155,7 @@ export default function TreasuryCard() {
       <CardContent className="space-y-4">
         <div className="flex items-baseline justify-between gap-4">
           <div>
-            <p className="text-xs uppercase text-muted-foreground">Saldo bancario total</p>
+            <p className="text-xs uppercase text-muted-foreground">{amountLabel}</p>
             <p className="text-3xl font-semibold tracking-tight">{totalFormatted}</p>
           </div>
           {/* Solo mostrar bloque empresa en modo admin */}
@@ -174,6 +175,13 @@ export default function TreasuryCard() {
             {new Date(data.snapshot_date).toLocaleDateString("es-ES")}
           </span>
         </div>
+
+        {/* Texto de pie - solo en modo cliente */}
+        {!canSwitchClient && (
+          <p className="text-[10px] text-muted-foreground">
+            Referencia de seguimiento del saldo. No incluye previsiones ni compromisos futuros.
+          </p>
+        )}
       </CardContent>
     </Card>
   );
