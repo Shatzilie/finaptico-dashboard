@@ -177,10 +177,10 @@ export function TaxCalendarCard() {
   return (
     <DashboardCard title="Situación fiscal estimada" icon={Calendar}>
       <div className="space-y-4">
-        {/* IVA Section - solo si hay fecha válida */}
+        {/* IVA Section */}
         {hasValidVatDate && (
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs font-medium text-muted-foreground">
               IVA — estimación trimestre en curso
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -197,37 +197,37 @@ export function TaxCalendarCard() {
                 <p className="text-sm font-semibold text-primary">{formatCurrency(data.vat_net_qtd)}</p>
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground">
-              Cálculo orientativo según facturación y gastos registrados hasta la fecha.
+            <p className="text-[10px] text-muted-foreground/70">
+              Según facturación y gastos registrados.
             </p>
           </div>
         )}
 
-        {/* IS Section - solo si hay fecha válida */}
+        {/* IS Section */}
         {hasValidIsDate && (
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Impuesto sobre Sociedades — estimación anual
+            <p className="text-xs font-medium text-muted-foreground">
+              Impuesto sobre sociedades — estimación anual
             </p>
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg border border-border p-2">
-                <p className="text-[10px] text-muted-foreground">Tipo impositivo</p>
+                <p className="text-[10px] text-muted-foreground">Tipo</p>
                 <p className="text-sm font-semibold text-foreground">{formatPercent(data.is_tax_rate)}</p>
               </div>
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
-                <p className="text-[10px] text-muted-foreground">IS Estimado</p>
+                <p className="text-[10px] text-muted-foreground">IS estimado</p>
                 <p className="text-sm font-semibold text-primary">{formatCurrency(data.is_estimated_tax_ytd)}</p>
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground">
-              Referencia basada en el resultado acumulado hasta el momento. Sujeta a variaciones de cierre.
+            <p className="text-[10px] text-muted-foreground/70">
+              Resultado acumulado, sujeto a variaciones.
             </p>
           </div>
         )}
 
-        {/* Footer - solo mostrar si hay fecha válida de generación */}
+        {/* Footer */}
         {hasValidGeneratedDate && (
-          <p className="text-[10px] text-muted-foreground text-right">
+          <p className="text-[10px] text-muted-foreground text-right pt-1 border-t">
             Actualizado: {new Date(data.snapshot_generated_at).toLocaleDateString("es-ES")}
           </p>
         )}

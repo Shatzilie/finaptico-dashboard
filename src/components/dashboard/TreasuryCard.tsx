@@ -52,12 +52,12 @@ export default function TreasuryCard() {
     }).format(balance);
   }, [data]);
 
-  // Textos adaptativos según modo
+  // Textos adaptativos según modo (sentence case)
   const title = canSwitchClient ? "Tesorería" : "Tesorería hoy";
   const description = canSwitchClient 
-    ? "Saldo total actual del cliente seleccionado." 
-    : "Saldo total en cuentas según información disponible";
-  const amountLabel = canSwitchClient ? "Saldo bancario total" : "Saldo bancario total";
+    ? "Saldo total del cliente seleccionado" 
+    : "Saldo en cuentas según información disponible";
+  const amountLabel = "Saldo bancario";
   const dateLabel = canSwitchClient ? "Fecha snapshot" : "Actualizado";
 
   // 1) Error cargando clientes
@@ -152,10 +152,10 @@ export default function TreasuryCard() {
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         <div className="flex items-baseline justify-between gap-4">
           <div>
-            <p className="text-xs uppercase text-muted-foreground">{amountLabel}</p>
+            <p className="text-xs text-muted-foreground">{amountLabel}</p>
             <p className="text-3xl font-semibold tracking-tight">{totalFormatted}</p>
           </div>
           {/* Solo mostrar bloque empresa en modo admin */}
@@ -176,10 +176,10 @@ export default function TreasuryCard() {
           </span>
         </div>
 
-        {/* Texto de pie - solo en modo cliente */}
+        {/* Nota de pie - solo modo cliente */}
         {!canSwitchClient && (
-          <p className="text-[10px] text-muted-foreground">
-            Referencia de seguimiento del saldo. No incluye previsiones ni compromisos futuros.
+          <p className="text-[10px] text-muted-foreground/70">
+            Seguimiento de saldo, sin previsiones ni compromisos.
           </p>
         )}
       </CardContent>

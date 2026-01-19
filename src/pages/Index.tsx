@@ -1,3 +1,4 @@
+import { Info } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import TreasuryCard from "@/components/dashboard/TreasuryCard";
 import BalanceProjectionCard from "@/components/dashboard/BalanceProjectionCard";
@@ -10,15 +11,8 @@ const Index = () => {
 
   return (
     <DashboardLayout title="Dashboard">
-      {/* Texto global de contexto - solo modo cliente */}
-      {!canSwitchClient && (
-        <p className="text-xs text-muted-foreground mb-4">
-          Panel de seguimiento orientativo para anticipar decisiones. No sustituye revisiones ni liquidaciones oficiales.
-        </p>
-      )}
-
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {/* Treasury - Full width on mobile, 2 cols on larger screens */}
+        {/* Treasury */}
         <div className="md:col-span-2 xl:col-span-1">
           <TreasuryCard />
         </div>
@@ -40,6 +34,14 @@ const Index = () => {
           </div>
         )}
       </div>
+
+      {/* Texto global de contexto - modo cliente, posición secundaria */}
+      {!canSwitchClient && (
+        <div className="mt-6 flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
+          <Info className="h-3 w-3 shrink-0" />
+          <span>Panel orientativo. No sustituye revisiones ni liquidaciones oficiales.</span>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

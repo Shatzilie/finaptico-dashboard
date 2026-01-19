@@ -131,14 +131,14 @@ export default function BalanceProjectionCard() {
     refetchOnWindowFocus: false,
   });
 
-  // Textos adaptativos según modo
-  const title = canSwitchClient ? "Proyección de Saldo" : "Evolución de tesorería";
+  // Textos adaptativos según modo (sentence case)
+  const title = canSwitchClient ? "Proyección de saldo" : "Evolución de tesorería";
   const description = canSwitchClient
-    ? "Evolución histórica del saldo bancario del cliente seleccionado."
-    : "Histórico orientativo para observar tendencias";
+    ? "Evolución histórica del saldo del cliente seleccionado"
+    : "Histórico para observar tendencias";
   const dateLabel = canSwitchClient ? "Último registro" : "Actualizado";
   const chartFooterText = !canSwitchClient 
-    ? "Uso visual para detectar variaciones relevantes en el tiempo. No es una previsión." 
+    ? "Referencia visual, no es una previsión." 
     : null;
 
   // Procesar datos para el gráfico
@@ -314,9 +314,9 @@ export default function BalanceProjectionCard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Texto explicativo bajo el gráfico - solo modo cliente */}
+        {/* Nota bajo el gráfico - solo modo cliente */}
         {chartFooterText && (
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[10px] text-muted-foreground/70">
             {chartFooterText}
           </p>
         )}
