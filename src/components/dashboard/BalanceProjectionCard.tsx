@@ -135,8 +135,11 @@ export default function BalanceProjectionCard() {
   const title = canSwitchClient ? "Proyección de Saldo" : "Evolución de tesorería";
   const description = canSwitchClient
     ? "Evolución histórica del saldo bancario del cliente seleccionado."
-    : "Histórico para ver la tendencia";
+    : "Histórico orientativo para observar tendencias";
   const dateLabel = canSwitchClient ? "Último registro" : "Actualizado";
+  const chartFooterText = !canSwitchClient 
+    ? "Uso visual para detectar variaciones relevantes en el tiempo. No es una previsión." 
+    : null;
 
   // Procesar datos para el gráfico
   const series: ChartPoint[] = useMemo(() => {
@@ -310,6 +313,13 @@ export default function BalanceProjectionCard() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
+
+        {/* Texto explicativo bajo el gráfico - solo modo cliente */}
+        {chartFooterText && (
+          <p className="text-[10px] text-muted-foreground">
+            {chartFooterText}
+          </p>
+        )}
 
         <div className="flex items-baseline justify-between text-xs text-muted-foreground">
           <div>

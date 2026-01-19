@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      blog_proposal_rounds: {
+        Row: {
+          closed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          proposals: Json
+          published_post_id: number | null
+          published_url: string | null
+          reminded_at: string | null
+          selected_option: number | null
+          status: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          proposals: Json
+          published_post_id?: number | null
+          published_url?: string | null
+          reminded_at?: string | null
+          selected_option?: number | null
+          status?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          proposals?: Json
+          published_post_id?: number | null
+          published_url?: string | null
+          reminded_at?: string | null
+          selected_option?: number | null
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -175,19 +175,13 @@ export function TaxCalendarCard() {
   const hasValidGeneratedDate = isValidDate(data.snapshot_generated_at);
 
   return (
-    <DashboardCard title="Situación Fiscal" icon={Calendar}>
+    <DashboardCard title="Situación fiscal estimada" icon={Calendar}>
       <div className="space-y-4">
-        {/* Periodo labels - solo mostrar si las fechas son válidas */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          {hasValidVatDate && <span>IVA: {formatQuarter(data.vat_quarter_start)}</span>}
-          {hasValidIsDate && <span>IS: Año {new Date(data.is_year_start).getFullYear()}</span>}
-        </div>
-
         {/* IVA Section - solo si hay fecha válida */}
         {hasValidVatDate && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              IVA (trimestre actual)
+              IVA — estimación trimestre en curso
             </p>
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-lg border border-border p-2">
@@ -203,6 +197,9 @@ export function TaxCalendarCard() {
                 <p className="text-sm font-semibold text-primary">{formatCurrency(data.vat_net_qtd)}</p>
               </div>
             </div>
+            <p className="text-[10px] text-muted-foreground">
+              Cálculo orientativo según facturación y gastos registrados hasta la fecha.
+            </p>
           </div>
         )}
 
@@ -210,7 +207,7 @@ export function TaxCalendarCard() {
         {hasValidIsDate && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Impuesto de Sociedades (YTD)
+              Impuesto sobre Sociedades — estimación anual
             </p>
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg border border-border p-2">
@@ -222,6 +219,9 @@ export function TaxCalendarCard() {
                 <p className="text-sm font-semibold text-primary">{formatCurrency(data.is_estimated_tax_ytd)}</p>
               </div>
             </div>
+            <p className="text-[10px] text-muted-foreground">
+              Referencia basada en el resultado acumulado hasta el momento. Sujeta a variaciones de cierre.
+            </p>
           </div>
         )}
 
