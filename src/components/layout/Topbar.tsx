@@ -14,6 +14,7 @@ import {
 } from '../ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import ClientSelector from '../ClientSelector';
+import { ThemeToggle } from '../ThemeToggle';
 
 export default function Topbar() {
   const { user, logout } = useAuth();
@@ -45,8 +46,10 @@ export default function Topbar() {
         )}
       </div>
 
-      {/* Derecha: empresa + info de usuario + logout */}
-      <div className="flex items-center gap-3">
+      {/* Derecha: toggle tema + empresa + info de usuario + logout */}
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
