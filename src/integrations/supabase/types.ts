@@ -53,6 +53,39 @@ export type Database = {
         }
         Relationships: []
       }
+      prospection_news: {
+        Row: {
+          company_name: string | null
+          content_snippet: string | null
+          id: string
+          processed_at: string | null
+          signal_type: string | null
+          source: string | null
+          title: string | null
+          url: string
+        }
+        Insert: {
+          company_name?: string | null
+          content_snippet?: string | null
+          id?: string
+          processed_at?: string | null
+          signal_type?: string | null
+          source?: string | null
+          title?: string | null
+          url: string
+        }
+        Update: {
+          company_name?: string | null
+          content_snippet?: string | null
+          id?: string
+          processed_at?: string | null
+          signal_type?: string | null
+          source?: string | null
+          title?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
