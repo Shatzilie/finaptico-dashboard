@@ -23,8 +23,14 @@ const Index = () => {
         </div>
 
         {/* Tax Calendar */}
-        <div>
+        <div className="space-y-2">
           <TaxCalendarCard />
+          {/* Disclaimer fiscal - solo vista cliente */}
+          {!canSwitchClient && (
+            <p className="text-xs text-muted-foreground pl-1">
+              Las cifras mostradas son estimaciones basadas en la información contable disponible en cada momento. El cierre fiscal definitivo lo realiza la gestoría y puede incluir ajustes.
+            </p>
+          )}
         </div>
 
         {/* Next Actions - Solo visible para admin */}
