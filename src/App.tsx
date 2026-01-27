@@ -12,6 +12,7 @@ import Acciones from "./pages/Acciones";
 import Calendario from "./pages/Calendario";
 import Configuracion from "./pages/Configuracion";
 import Ayuda from "./pages/Ayuda";
+import AdminTaxFilings from "./pages/AdminTaxFilings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
                 <Route path="/calendario" element={<Calendario />} />
                 <Route path="/configuracion" element={<Configuracion />} />
                 <Route path="/ayuda" element={<Ayuda />} />
+                <Route path="/admin/tax-filings" element={<AdminTaxFilings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </RequireAuth>

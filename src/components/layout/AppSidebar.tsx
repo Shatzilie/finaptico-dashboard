@@ -7,7 +7,8 @@ import {
   Settings,
   HelpCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  FileText
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import logo from "@/assets/logo.png";
@@ -21,6 +22,7 @@ const mainNavItems = [
   { title: "Proyecciones", url: "/proyecciones", icon: TrendingUp, clientVisible: false },
   { title: "Acciones", url: "/acciones", icon: ListChecks, clientVisible: false },
   { title: "Calendario Fiscal", url: "/calendario", icon: Calendar, clientVisible: false },
+  { title: "Tax Filings", url: "/admin/tax-filings", icon: FileText, clientVisible: false },
 ];
 
 const secondaryNavItems = [

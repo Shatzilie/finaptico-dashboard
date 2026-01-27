@@ -86,6 +86,60 @@ export type Database = {
         }
         Relationships: []
       }
+      tax_filings: {
+        Row: {
+          amount: number
+          client_code: string
+          created_at: string
+          currency: string
+          id: string
+          notes: string | null
+          period_end: string
+          period_start: string
+          presented_at: string | null
+          reference: string | null
+          result: Database["public"]["Enums"]["tax_filing_result"]
+          settled_at: string | null
+          status: Database["public"]["Enums"]["tax_filing_status"]
+          tax_model_code: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          client_code: string
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          period_end: string
+          period_start: string
+          presented_at?: string | null
+          reference?: string | null
+          result: Database["public"]["Enums"]["tax_filing_result"]
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["tax_filing_status"]
+          tax_model_code: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_code?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          notes?: string | null
+          period_end?: string
+          period_start?: string
+          presented_at?: string | null
+          reference?: string | null
+          result?: Database["public"]["Enums"]["tax_filing_result"]
+          settled_at?: string | null
+          status?: Database["public"]["Enums"]["tax_filing_status"]
+          tax_model_code?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -94,7 +148,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      tax_filing_result: "PAYABLE" | "COMPENSABLE" | "REFUNDABLE" | "ZERO"
+      tax_filing_status: "DRAFT" | "PRESENTED" | "SETTLED"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -221,6 +276,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      tax_filing_result: ["PAYABLE", "COMPENSABLE", "REFUNDABLE", "ZERO"],
+      tax_filing_status: ["DRAFT", "PRESENTED", "SETTLED"],
+    },
   },
 } as const
