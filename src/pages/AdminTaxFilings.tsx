@@ -81,16 +81,16 @@ const clientOptions = [
 ];
 
 const statusOptions: { value: TaxFiling["status"]; label: string }[] = [
-  { value: "DRAFT", label: "DRAFT" },
-  { value: "PRESENTED", label: "PRESENTED" },
-  { value: "SETTLED", label: "SETTLED" },
+  { value: "DRAFT", label: "Borrador" },
+  { value: "PRESENTED", label: "Presentado" },
+  { value: "SETTLED", label: "Cerrado" },
 ];
 
 const resultOptions: { value: TaxFiling["result"]; label: string }[] = [
-  { value: "PAYABLE", label: "PAYABLE" },
-  { value: "COMPENSABLE", label: "COMPENSABLE" },
-  { value: "REFUNDABLE", label: "REFUNDABLE" },
-  { value: "ZERO", label: "ZERO" },
+  { value: "PAYABLE", label: "A pagar" },
+  { value: "COMPENSABLE", label: "A compensar" },
+  { value: "REFUNDABLE", label: "A devolver" },
+  { value: "ZERO", label: "Resultado cero" },
 ];
 
 export default function AdminTaxFilings() {
@@ -229,7 +229,7 @@ export default function AdminTaxFilings() {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Admin · Tax Filings</h1>
+          <h1 className="text-2xl font-bold text-foreground">Admin · Presentaciones fiscales</h1>
           <Button onClick={handleNewFiling} variant="outline" size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Nuevo
@@ -240,14 +240,14 @@ export default function AdminTaxFilings() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
-              {isEditing ? "Editar Tax Filing" : "Crear Tax Filing"}
+              {isEditing ? "Editar presentación fiscal" : "Crear presentación fiscal"}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* client_code */}
               <div className="space-y-2">
-                <Label htmlFor="client_code">Client Code *</Label>
+                <Label htmlFor="client_code">Cliente *</Label>
                 <Select
                   value={formData.client_code}
                   onValueChange={(v) => handleInputChange("client_code", v)}
@@ -267,18 +267,18 @@ export default function AdminTaxFilings() {
 
               {/* tax_model_code */}
               <div className="space-y-2">
-                <Label htmlFor="tax_model_code">Tax Model Code *</Label>
+                <Label htmlFor="tax_model_code">Modelo fiscal *</Label>
                 <Input
                   id="tax_model_code"
                   value={formData.tax_model_code}
                   onChange={(e) => handleInputChange("tax_model_code", e.target.value)}
-                  placeholder="Ej: 303, 111..."
+                  placeholder="Ej: 303, 111…"
                 />
               </div>
 
               {/* period_start */}
               <div className="space-y-2">
-                <Label htmlFor="period_start">Period Start *</Label>
+                <Label htmlFor="period_start">Inicio del periodo *</Label>
                 <Input
                   id="period_start"
                   type="date"
@@ -289,7 +289,7 @@ export default function AdminTaxFilings() {
 
               {/* period_end */}
               <div className="space-y-2">
-                <Label htmlFor="period_end">Period End *</Label>
+                <Label htmlFor="period_end">Fin del periodo *</Label>
                 <Input
                   id="period_end"
                   type="date"
@@ -300,7 +300,7 @@ export default function AdminTaxFilings() {
 
               {/* status */}
               <div className="space-y-2">
-                <Label htmlFor="status">Status *</Label>
+                <Label htmlFor="status">Estado *</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(v) => handleInputChange("status", v)}
@@ -320,7 +320,7 @@ export default function AdminTaxFilings() {
 
               {/* result */}
               <div className="space-y-2">
-                <Label htmlFor="result">Result *</Label>
+                <Label htmlFor="result">Resultado *</Label>
                 <Select
                   value={formData.result}
                   onValueChange={(v) => handleInputChange("result", v)}
@@ -340,7 +340,7 @@ export default function AdminTaxFilings() {
 
               {/* amount */}
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount *</Label>
+                <Label htmlFor="amount">Importe *</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -353,7 +353,7 @@ export default function AdminTaxFilings() {
 
               {/* currency */}
               <div className="space-y-2">
-                <Label htmlFor="currency">Currency *</Label>
+                <Label htmlFor="currency">Moneda *</Label>
                 <Input
                   id="currency"
                   value={formData.currency}
@@ -364,7 +364,7 @@ export default function AdminTaxFilings() {
 
               {/* presented_at */}
               <div className="space-y-2">
-                <Label htmlFor="presented_at">Presented At</Label>
+                <Label htmlFor="presented_at">Fecha de presentación</Label>
                 <Input
                   id="presented_at"
                   type="datetime-local"
@@ -375,7 +375,7 @@ export default function AdminTaxFilings() {
 
               {/* settled_at */}
               <div className="space-y-2">
-                <Label htmlFor="settled_at">Settled At</Label>
+                <Label htmlFor="settled_at">Fecha de cierre</Label>
                 <Input
                   id="settled_at"
                   type="datetime-local"
@@ -386,7 +386,7 @@ export default function AdminTaxFilings() {
 
               {/* reference */}
               <div className="space-y-2">
-                <Label htmlFor="reference">Reference</Label>
+                <Label htmlFor="reference">Referencia</Label>
                 <Input
                   id="reference"
                   value={formData.reference}
@@ -397,12 +397,12 @@ export default function AdminTaxFilings() {
 
               {/* notes */}
               <div className="space-y-2 md:col-span-2 lg:col-span-3">
-                <Label htmlFor="notes">Notes</Label>
+                <Label htmlFor="notes">Notas</Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => handleInputChange("notes", e.target.value)}
-                  placeholder="Notas adicionales..."
+                  placeholder="Notas adicionales…"
                   rows={3}
                 />
               </div>
@@ -425,7 +425,7 @@ export default function AdminTaxFilings() {
         {/* Listado */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Listado de Tax Filings</CardTitle>
+            <CardTitle className="text-lg">Listado de presentaciones fiscales</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -440,13 +440,13 @@ export default function AdminTaxFilings() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Model</TableHead>
-                    <TableHead>Period Start</TableHead>
-                    <TableHead>Period End</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Result</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Modelo</TableHead>
+                    <TableHead>Inicio</TableHead>
+                    <TableHead>Fin</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Resultado</TableHead>
+                    <TableHead className="text-right">Importe</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -465,10 +465,10 @@ export default function AdminTaxFilings() {
                             ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
                             : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"
                         }`}>
-                          {filing.status}
+                          {statusOptions.find(s => s.value === filing.status)?.label || filing.status}
                         </span>
                       </TableCell>
-                      <TableCell>{filing.result}</TableCell>
+                      <TableCell>{resultOptions.find(r => r.value === filing.result)?.label || filing.result}</TableCell>
                       <TableCell className="text-right">
                         {filing.amount.toLocaleString("es-ES", {
                           minimumFractionDigits: 2,
