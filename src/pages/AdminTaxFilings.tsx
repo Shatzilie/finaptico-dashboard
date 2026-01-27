@@ -110,13 +110,13 @@ export default function AdminTaxFilings() {
   const loadFilings = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("tax_filings")
-        .select("*")
-        .order("period_start", { ascending: false });
+      const { data, error } = await supabase.functions.invoke("admin-tax-filings-list");
 
       if (error) throw error;
-      setFilings((data as TaxFiling[]) || []);
+      
+      // La función devuelve un array (puede estar vacío)
+      const filingsList = Array.isArray(data) ? data : [];
+      setFilings(filingsList as TaxFiling[]);
     } catch (err) {
       console.error("Error loading tax filings:", err);
       toast({
