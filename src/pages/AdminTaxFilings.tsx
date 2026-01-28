@@ -102,11 +102,6 @@ export default function AdminTaxFilings() {
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Solo admins pueden acceder
-  if (!canSwitchClient) {
-    return <Navigate to="/" replace />;
-  }
-
   const loadFilings = async () => {
     setLoading(true);
     try {
@@ -132,6 +127,11 @@ export default function AdminTaxFilings() {
   useEffect(() => {
     loadFilings();
   }, []);
+
+  // Solo admins pueden acceder - DESPUÉS de todos los hooks
+  if (!canSwitchClient) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleInputChange = (field: keyof FormData, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
