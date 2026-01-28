@@ -24,8 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useClientContext } from "@/context/ClientContext";
 import { toast } from "@/hooks/use-toast";
-import { Pencil, Plus, Loader2 } from "lucide-react";
-import { Navigate } from "react-router-dom";
+import { Pencil, Plus, Loader2, ShieldAlert } from "lucide-react";
 
 type TaxFiling = {
   id: string;
@@ -128,9 +127,41 @@ export default function AdminTaxFilings() {
     loadFilings();
   }, []);
 
-  // Solo admins pueden acceder - DESPUÉS de todos los hooks
+  // Panel de acceso restringido (sin navegación automática)
+  if (!session) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="max-w-md w-full">
+            <CardHeader className="text-center">
+              <ShieldAlert className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+              <CardTitle>Acceso restringido</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center text-muted-foreground">
+              Inicia sesión para ver esta sección.
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   if (!canSwitchClient) {
-    return <Navigate to="/" replace />;
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="max-w-md w-full">
+            <CardHeader className="text-center">
+              <ShieldAlert className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+              <CardTitle>Acceso restringido</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center text-muted-foreground">
+              No tienes permisos para ver esta sección.
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   const handleInputChange = (field: keyof FormData, value: string | number) => {
