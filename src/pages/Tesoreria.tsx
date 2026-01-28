@@ -23,6 +23,7 @@ type TaxPayment = {
   amount: number;
   currency: string;
   settled_at: string;
+  notes: string | null;
 };
 
 function formatPeriod(periodEnd: string): string {
@@ -116,6 +117,7 @@ const Tesoreria = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Modelo</TableHead>
+                  <TableHead>Concepto</TableHead>
                   <TableHead>Periodo</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Importe</TableHead>
@@ -127,6 +129,9 @@ const Tesoreria = () => {
                   <TableRow key={payment.id}>
                     <TableCell className="font-medium">
                       {payment.tax_model_code}
+                    </TableCell>
+                    <TableCell>
+                      {payment.notes || `Impuesto modelo ${payment.tax_model_code}`}
                     </TableCell>
                     <TableCell>{formatPeriod(payment.period_end)}</TableCell>
                     <TableCell>Pagado</TableCell>

@@ -22,6 +22,7 @@ type TaxPayment = {
   amount: number;
   currency: string;
   settled_at: string;
+  notes: string | null;
 };
 
 function formatPeriod(periodEnd: string): string {
@@ -111,6 +112,7 @@ export function TaxPaymentsCard() {
           <TableHeader>
             <TableRow>
               <TableHead>Modelo</TableHead>
+              <TableHead>Concepto</TableHead>
               <TableHead>Periodo</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Importe</TableHead>
@@ -122,6 +124,9 @@ export function TaxPaymentsCard() {
               <TableRow key={payment.id}>
                 <TableCell className="font-medium">
                   {payment.tax_model_code}
+                </TableCell>
+                <TableCell>
+                  {payment.notes || `Impuesto modelo ${payment.tax_model_code}`}
                 </TableCell>
                 <TableCell>{formatPeriod(payment.period_end)}</TableCell>
                 <TableCell>Pagado</TableCell>
