@@ -122,18 +122,18 @@ export function TaxPaymentsCard() {
           <TableBody>
             {taxPayments.map((payment) => (
               <TableRow key={payment.id}>
-                <TableCell className="font-medium">
-                  {payment.tax_model_code}
+                <TableCell className="font-medium whitespace-nowrap">
+                  Modelo {payment.tax_model_code}
                 </TableCell>
                 <TableCell>
-                  {payment.notes || `Impuesto modelo ${payment.tax_model_code}`}
+                  {payment.notes?.trim() ? payment.notes : "Impuesto"}
                 </TableCell>
                 <TableCell>{formatPeriod(payment.period_end)}</TableCell>
-                <TableCell>Pagado</TableCell>
-                <TableCell className="text-right">
+                <TableCell className="whitespace-nowrap">Pagado</TableCell>
+                <TableCell className="text-right whitespace-nowrap">
                   {formatAmount(payment.amount, payment.currency)}
                 </TableCell>
-                <TableCell>{formatDate(payment.settled_at)}</TableCell>
+                <TableCell className="whitespace-nowrap">{formatDate(payment.settled_at)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
