@@ -4,6 +4,7 @@ import TreasuryCard from "@/components/dashboard/TreasuryCard";
 import BalanceProjectionCard from "@/components/dashboard/BalanceProjectionCard";
 import { NextActionsCard } from "@/components/dashboard/NextActionsCard";
 import { TaxCalendarCard } from "@/components/dashboard/TaxCalendarCard";
+import { TaxPaymentsCard } from "@/components/dashboard/TaxPaymentsCard";
 import { useClientContext } from "@/context/ClientContext";
 
 const Index = () => {
@@ -32,6 +33,13 @@ const Index = () => {
             </p>
           )}
         </div>
+
+        {/* Tax Payments - Solo visible para clientes */}
+        {!canSwitchClient && (
+          <div className="md:col-span-2 xl:col-span-3">
+            <TaxPaymentsCard />
+          </div>
+        )}
 
         {/* Next Actions - Solo visible para admin */}
         {canSwitchClient && (
