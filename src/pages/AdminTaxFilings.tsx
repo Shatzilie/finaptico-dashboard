@@ -24,7 +24,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useClientContext } from "@/context/ClientContext";
 import { toast } from "@/hooks/use-toast";
-import { Pencil, Plus, Loader2, ShieldAlert } from "lucide-react";
+import { Pencil, Plus, Loader2, ShieldAlert, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type TaxFiling = {
   id: string;
@@ -100,6 +110,9 @@ export default function AdminTaxFilings() {
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [isEditing, setIsEditing] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [filingToDelete, setFilingToDelete] = useState<TaxFiling | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadFilings = async () => {
     setLoading(true);
@@ -166,6 +179,42 @@ export default function AdminTaxFilings() {
 
   const handleInputChange = (field: keyof FormData, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleDeleteClick = (filing: TaxFiling) => {
+    setFilingToDelete(filing);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!filingToDelete) return;
+
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-tax-filing-delete", {
+        body: { id: filingToDelete.id },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Borrador eliminado",
+        description: "El registro se ha eliminado correctamente.",
+      });
+
+      setDeleteDialogOpen(false);
+      setFilingToDelete(null);
+      loadFilings();
+    } catch (err) {
+      console.error("Error deleting tax filing:", err);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el borrador.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleEdit = (filing: TaxFiling) => {
@@ -506,14 +555,26 @@ export default function AdminTaxFilings() {
                           maximumFractionDigits: 2,
                         })} {filing.currency}
                       </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(filing)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(filing)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          {filing.status === "DRAFT" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(filing)}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -523,6 +584,29 @@ export default function AdminTaxFilings() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Diálogo de confirmación de borrado */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar este borrador?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente el registro fiscal en estado borrador.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
