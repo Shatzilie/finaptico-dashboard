@@ -264,22 +264,31 @@ export default function AdminTaxFilings() {
     setSaving(true);
 
     try {
-      // Convertir status y result de valores técnicos a etiquetas en español
-      const statusLabel = statusOptions.find((opt) => opt.value === formData.status)?.label || formData.status;
-      const resultLabel = resultOptions.find((opt) => opt.value === formData.result)?.label || formData.result;
+      // Si el estado es SETTLED, settled_at es obligatorio
+      const settledAtValue = formData.settled_at || null;
+      if (formData.status === "SETTLED" && !settledAtValue) {
+        toast({
+          title: "Error",
+          description: "La fecha de cierre es obligatoria cuando el estado es 'Cerrado'.",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
 
+      // Enviar valores técnicos exactos (SETTLED, PAYABLE, etc.) - no etiquetas en español
       const body = {
         id: formData.id || null,
         client_code: formData.client_code,
         tax_model_code: formData.tax_model_code,
         period_start: formData.period_start,
         period_end: formData.period_end,
-        status: statusLabel,
-        result: resultLabel,
+        status: formData.status, // DRAFT | PRESENTED | SETTLED
+        result: formData.result, // PAYABLE | COMPENSABLE | REFUNDABLE | ZERO
         amount: formData.amount,
         currency: formData.currency,
         presented_at: formData.presented_at || null,
-        settled_at: formData.settled_at || null,
+        settled_at: settledAtValue,
         reference: formData.reference || null,
         notes: formData.notes || null,
       };
