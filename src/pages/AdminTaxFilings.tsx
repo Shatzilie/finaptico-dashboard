@@ -264,14 +264,18 @@ export default function AdminTaxFilings() {
     setSaving(true);
 
     try {
+      // Convertir status y result de valores técnicos a etiquetas en español
+      const statusLabel = statusOptions.find((opt) => opt.value === formData.status)?.label || formData.status;
+      const resultLabel = resultOptions.find((opt) => opt.value === formData.result)?.label || formData.result;
+
       const body = {
         id: formData.id || null,
         client_code: formData.client_code,
         tax_model_code: formData.tax_model_code,
         period_start: formData.period_start,
         period_end: formData.period_end,
-        status: formData.status,
-        result: formData.result,
+        status: statusLabel,
+        result: resultLabel,
         amount: formData.amount,
         currency: formData.currency,
         presented_at: formData.presented_at || null,
@@ -291,8 +295,29 @@ export default function AdminTaxFilings() {
         description: formData.id ? "Registro actualizado correctamente." : "Registro creado correctamente.",
       });
 
-      handleNewFiling();
-      loadFilings();
+      // Refrescar lista desde backend (sin actualización optimista)
+      await loadFilings();
+      
+      // Actualizar formData con respuesta del servidor si estamos editando
+      if (data && isEditing) {
+        setFormData({
+          id: data.id,
+          client_code: data.client_code,
+          tax_model_code: data.tax_model_code,
+          period_start: data.period_start,
+          period_end: data.period_end,
+          status: data.status,
+          result: data.result,
+          amount: data.amount,
+          currency: data.currency,
+          presented_at: data.presented_at ? data.presented_at.slice(0, 16) : "",
+          settled_at: data.settled_at ? data.settled_at.slice(0, 16) : "",
+          reference: data.reference || "",
+          notes: data.notes || "",
+        });
+      } else {
+        handleNewFiling();
+      }
     } catch (err) {
       console.error("Error saving tax filing:", err);
       toast({
