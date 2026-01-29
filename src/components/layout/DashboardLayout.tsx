@@ -10,17 +10,17 @@ interface DashboardLayoutProps {
 }
 
 function DashboardContent({ children }: DashboardLayoutProps) {
-  const { collapsed } = useSidebarContext();
+  const { collapsed, isMobile } = useSidebarContext();
 
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
       <div className={cn(
         "transition-all duration-300",
-        collapsed ? "pl-16" : "pl-64"
+        isMobile ? "pl-0" : (collapsed ? "pl-16" : "pl-64")
       )}>
         <Topbar />
-        <main className="p-6">
+        <main className="p-4 md:p-6">
           {children}
         </main>
       </div>
