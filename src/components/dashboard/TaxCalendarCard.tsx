@@ -218,28 +218,6 @@ export function TaxCalendarCard() {
           </div>
         )}
 
-        {/* IS Section */}
-        {hasValidIsDate && (
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              Impuesto sobre sociedades — estimación anual
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg border border-border p-2">
-                <p className="text-[10px] text-muted-foreground">Tipo</p>
-                <p className="text-sm font-semibold text-foreground">{formatPercent(data.is_tax_rate)}</p>
-              </div>
-              <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
-                <p className="text-[10px] text-muted-foreground">IS estimado</p>
-                <p className="text-sm font-semibold text-primary">{formatCurrency(data.is_estimated_tax_ytd)}</p>
-              </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground/70">
-              Resultado acumulado, sujeto a variaciones.
-            </p>
-          </div>
-        )}
-
         {/* IRPF Section */}
         {hasIrpfData && (
           <div className="space-y-2">
@@ -277,6 +255,28 @@ export function TaxCalendarCard() {
             
             <p className="text-[10px] text-muted-foreground/70">
               Parte del saldo actual está comprometido para cubrir IRPF. Aunque esté en cuenta, no es dinero disponible.
+            </p>
+          </div>
+        )}
+
+        {/* IS Section */}
+        {hasValidIsDate && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              Impuesto sobre sociedades — estimación anual
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border p-2">
+                <p className="text-[10px] text-muted-foreground">Tipo</p>
+                <p className="text-sm font-semibold text-foreground">{formatPercent(data.is_tax_rate)}</p>
+              </div>
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
+                <p className="text-[10px] text-muted-foreground">IS estimado</p>
+                <p className="text-sm font-semibold text-primary">{formatCurrency(data.is_estimated_tax_ytd)}</p>
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground/70">
+              Resultado acumulado, sujeto a variaciones.
             </p>
           </div>
         )}
