@@ -20,7 +20,7 @@ type FiscalSnapshot = {
   is_tax_rate: number;
   is_estimated_tax_ytd: number;
   is_has_revenue_ytd: boolean;
-  // IRPF fields
+  // IRPF fields (legacy, may still be present)
   irpf_estimated_total_qtd: number | null;
   irpf_estimated_payroll_qtd: number | null;
   irpf_estimated_invoices_qtd: number | null;
@@ -28,6 +28,13 @@ type FiscalSnapshot = {
   irpf_quarter_start: string | null;
   irpf_quarter_end: string | null;
   irpf_has_breakdown: boolean | null;
+};
+
+type IrpfSplit = {
+  client_code: string;
+  irpf_total_qtd_due: number | null;
+  irpf_payroll_qtd_due: number | null;
+  irpf_suppliers_qtd_due: number | null;
 };
 
 async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot | null> {
@@ -43,6 +50,21 @@ async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot |
   }
 
   return data as FiscalSnapshot | null;
+}
+
+async function fetchIrpfSplit(clientCode: string): Promise<IrpfSplit | null> {
+  const { data, error } = await supabase
+    .schema("erp_core")
+    .from("v_dashboard_fiscal_irpf_qtd_split")
+    .select("*")
+    .eq("client_code", clientCode)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as IrpfSplit | null;
 }
 
 function formatCurrency(value: number | null | undefined, currency = "EUR"): string {
@@ -107,6 +129,14 @@ export function TaxCalendarCard() {
     refetchOnWindowFocus: false,
   });
 
+  const { data: irpfData, isLoading: irpfLoading } = useQuery({
+    queryKey: ["irpf-split", clientCode],
+    queryFn: () => fetchIrpfSplit(clientCode as string),
+    enabled: !!clientCode && !clientsLoading,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
   // Loading clientes
   if (clientsLoading) {
     return (
@@ -162,13 +192,12 @@ export function TaxCalendarCard() {
   // Validación de fechas
   const hasValidVatDate = isValidDate(data?.vat_quarter_start);
   const hasValidIsDate = isValidDate(data?.is_year_start);
-  const hasValidIrpfDate = isValidDate(data?.irpf_quarter_start);
   
-  // IRPF: mostrar si hay fecha válida y total > 0
-  const hasIrpfData = hasValidIrpfDate && 
-    data?.irpf_estimated_total_qtd !== null && 
-    data?.irpf_estimated_total_qtd !== undefined && 
-    data?.irpf_estimated_total_qtd > 0;
+  // IRPF: mostrar si hay datos de la vista irpf_split con total > 0
+  const hasIrpfData = irpfData && 
+    irpfData.irpf_total_qtd_due !== null && 
+    irpfData.irpf_total_qtd_due !== undefined && 
+    irpfData.irpf_total_qtd_due > 0;
   
   // Validación de base fiscal suficiente (modo cliente no debe ver 0,00 € sin actividad real)
   const hasFiscalBasis = hasSufficientFiscalBasis(data, hasValidVatDate, hasValidIsDate);
@@ -218,40 +247,28 @@ export function TaxCalendarCard() {
           </div>
         )}
 
-        {/* IRPF Section */}
-        {hasIrpfData && (
+        {/* IRPF Section - usando datos de v_dashboard_fiscal_irpf_qtd_split */}
+        {hasIrpfData && irpfData && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
               IRPF — estimación trimestre en curso
             </p>
             <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
               <p className="text-[10px] text-muted-foreground">Total IRPF</p>
-              <p className="text-sm font-semibold text-primary">{formatCurrency(data.irpf_estimated_total_qtd)}</p>
+              <p className="text-sm font-semibold text-primary">{formatCurrency(irpfData.irpf_total_qtd_due)}</p>
             </div>
             
-            {/* Breakdown - solo si irpf_has_breakdown es true */}
-            {data.irpf_has_breakdown && (
-              <div className="grid grid-cols-3 gap-2">
-                {(data.irpf_estimated_payroll_qtd ?? 0) > 0 && (
-                  <div className="rounded-lg border border-border p-2">
-                    <p className="text-[10px] text-muted-foreground">IRPF nóminas</p>
-                    <p className="text-sm font-semibold text-foreground">{formatCurrency(data.irpf_estimated_payroll_qtd)}</p>
-                  </div>
-                )}
-                {(data.irpf_estimated_invoices_qtd ?? 0) > 0 && (
-                  <div className="rounded-lg border border-border p-2">
-                    <p className="text-[10px] text-muted-foreground">IRPF facturas</p>
-                    <p className="text-sm font-semibold text-foreground">{formatCurrency(data.irpf_estimated_invoices_qtd)}</p>
-                  </div>
-                )}
-                {(data.irpf_estimated_purchases_qtd ?? 0) > 0 && (
-                  <div className="rounded-lg border border-border p-2">
-                    <p className="text-[10px] text-muted-foreground">IRPF compras</p>
-                    <p className="text-sm font-semibold text-foreground">{formatCurrency(data.irpf_estimated_purchases_qtd)}</p>
-                  </div>
-                )}
+            {/* Breakdown: Nóminas + Facturas */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border p-2">
+                <p className="text-[10px] text-muted-foreground">IRPF nóminas</p>
+                <p className="text-sm font-semibold text-foreground">{formatCurrency(irpfData.irpf_payroll_qtd_due)}</p>
               </div>
-            )}
+              <div className="rounded-lg border border-border p-2">
+                <p className="text-[10px] text-muted-foreground">IRPF facturas</p>
+                <p className="text-sm font-semibold text-foreground">{formatCurrency(irpfData.irpf_suppliers_qtd_due)}</p>
+              </div>
+            </div>
             
             <p className="text-[10px] text-muted-foreground/70">
               Parte del saldo actual está comprometido para cubrir IRPF. Aunque esté en cuenta, no es dinero disponible.
