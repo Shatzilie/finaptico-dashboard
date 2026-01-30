@@ -220,28 +220,28 @@ export function TaxCalendarCard() {
 
   return (
     <DashboardCard title="Situación fiscal estimada" icon={Calendar}>
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* IVA Section */}
         {hasValidVatDate && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <p className="text-xs font-medium text-muted-foreground">
               IVA — estimación trimestre en curso
             </p>
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg border border-border/50 p-3">
+              <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Repercutido</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-1">{formatCurrency(data.vat_output_qtd)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(data.vat_output_qtd)}</p>
               </div>
-              <div className="rounded-lg border border-border/50 p-3">
+              <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Soportado</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-1">{formatCurrency(data.vat_supported_qtd)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(data.vat_supported_qtd)}</p>
               </div>
-              <div className="rounded-lg border border-primary/30 bg-primary/5 dark:bg-primary/10 p-3">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Neto</p>
-                <p className="text-base font-semibold text-primary tabular-nums mt-1">{formatCurrency(data.vat_net_qtd)}</p>
+                <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(data.vat_net_qtd)}</p>
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground/70">
+            <p className="text-[10px] text-muted-foreground/60">
               Según facturación y gastos registrados.
             </p>
           </div>
@@ -249,30 +249,30 @@ export function TaxCalendarCard() {
 
         {/* IRPF Section - usando datos de v_dashboard_fiscal_irpf_qtd_split */}
         {hasIrpfData && irpfData && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <p className="text-xs font-medium text-muted-foreground">
               IRPF — estimación trimestre en curso
             </p>
             
             {/* Breakdown first: Nóminas + Facturas */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-border/50 p-3">
+              <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-1">{formatCurrency(irpfData.irpf_payroll_qtd_due)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfData.irpf_payroll_qtd_due)}</p>
               </div>
-              <div className="rounded-lg border border-border/50 p-3">
+              <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-1">{formatCurrency(irpfData.irpf_suppliers_qtd_due)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfData.irpf_suppliers_qtd_due)}</p>
               </div>
             </div>
             
             {/* Total after breakdown */}
-            <div className="rounded-lg border border-primary/30 bg-primary/5 dark:bg-primary/10 p-3">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
-              <p className="text-base font-semibold text-primary tabular-nums mt-1">{formatCurrency(irpfData.irpf_total_qtd_due)}</p>
+              <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(irpfData.irpf_total_qtd_due)}</p>
             </div>
             
-            <p className="text-[10px] text-muted-foreground/70">
+            <p className="text-[10px] text-muted-foreground/60">
               Parte del saldo actual está comprometido para cubrir IRPF. Aunque esté en cuenta, no es dinero disponible.
             </p>
           </div>
@@ -280,21 +280,21 @@ export function TaxCalendarCard() {
 
         {/* IS Section */}
         {hasValidIsDate && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <p className="text-xs font-medium text-muted-foreground">
               Impuesto sobre sociedades — estimación anual
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-border/50 p-3">
+              <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Tipo</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-1">{formatPercent(data.is_tax_rate)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatPercent(data.is_tax_rate)}</p>
               </div>
-              <div className="rounded-lg border border-primary/30 bg-primary/5 dark:bg-primary/10 p-3">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IS estimado</p>
-                <p className="text-base font-semibold text-primary tabular-nums mt-1">{formatCurrency(data.is_estimated_tax_ytd)}</p>
+                <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(data.is_estimated_tax_ytd)}</p>
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground/70">
+            <p className="text-[10px] text-muted-foreground/60">
               Resultado acumulado, sujeto a variaciones.
             </p>
           </div>
@@ -302,8 +302,8 @@ export function TaxCalendarCard() {
 
         {/* Footer */}
         {hasValidGeneratedDate && (
-          <p className="text-[10px] text-muted-foreground text-right pt-3 border-t border-border/50">
-            <span className="font-medium">Actualizado:</span> <span className="tabular-nums">{new Date(data.snapshot_generated_at).toLocaleDateString("es-ES")}</span>
+          <p className="text-[10px] text-muted-foreground text-right pt-4 border-t border-border/50">
+            <span className="font-medium">Actualizado:</span> <span className="text-foreground tabular-nums">{new Date(data.snapshot_generated_at).toLocaleDateString("es-ES")}</span>
           </p>
         )}
       </div>

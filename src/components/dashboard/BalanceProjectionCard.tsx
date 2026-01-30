@@ -268,33 +268,31 @@ export default function BalanceProjectionCard() {
   return (
     <Card className="font-sans">
       <CardHeader>
-        <CardTitle className="text-foreground font-semibold">{title}</CardTitle>
-        <CardDescription className="text-muted-foreground">
-          {description}
-        </CardDescription>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={series}>
               <defs>
                 <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.2} />
                   <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
               <XAxis 
                 dataKey="label" 
                 tickLine={false} 
                 axisLine={false} 
-                tickMargin={10} 
+                tickMargin={12} 
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }} 
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                tickMargin={8}
+                tickMargin={10}
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
                 tickFormatter={(value: number) =>
                   new Intl.NumberFormat("es-ES", {
@@ -335,19 +333,19 @@ export default function BalanceProjectionCard() {
 
         {/* Nota bajo el gráfico - solo modo cliente */}
         {chartFooterText && (
-          <p className="text-[10px] text-muted-foreground/70">
+          <p className="text-[10px] text-muted-foreground/60">
             {chartFooterText}
           </p>
         )}
 
-        <div className="flex items-baseline justify-between text-xs text-muted-foreground border-t border-border/50 pt-4">
+        <div className="flex items-baseline justify-between text-xs text-muted-foreground border-t border-border/50 pt-5">
           <div>
-            <p className="font-medium uppercase tracking-wide">{dateLabel}</p>
+            <p className="font-medium uppercase tracking-wide text-[10px]">{dateLabel}</p>
             <p className="font-semibold text-foreground tabular-nums mt-1">{lastPoint.date.toLocaleDateString("es-ES")}</p>
           </div>
           <div className="text-right">
-            <p className="font-medium uppercase tracking-wide">Saldo</p>
-            <p className="text-lg font-semibold text-foreground tabular-nums mt-1">
+            <p className="font-medium uppercase tracking-wide text-[10px]">Saldo</p>
+            <p className="text-xl font-semibold text-foreground dark:text-white tabular-nums mt-1">
               {new Intl.NumberFormat("es-ES", {
                 style: "currency",
                 currency,

@@ -108,40 +108,42 @@ export function TaxPaymentsCard() {
           No hay pagos de impuestos registrados este año.
         </p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Modelo</TableHead>
-              <TableHead>Concepto</TableHead>
-              <TableHead>Periodo</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="text-right">Importe</TableHead>
-              <TableHead>Fecha de pago</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {taxPayments.map((payment) => (
-              <TableRow key={payment.id}>
-                <TableCell className="font-semibold whitespace-nowrap">
-                  Modelo {payment.tax_model_code}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {payment.notes?.trim() ? payment.notes : "Impuesto"}
-                </TableCell>
-                <TableCell className="tabular-nums">{formatPeriod(payment.period_end)}</TableCell>
-                <TableCell className="whitespace-nowrap">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-success/10 text-success">
-                    Pagado
-                  </span>
-                </TableCell>
-                <TableCell className="text-right whitespace-nowrap font-semibold tabular-nums">
-                  {formatAmount(payment.amount, payment.currency)}
-                </TableCell>
-                <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">{formatDate(payment.settled_at)}</TableCell>
+        <div className="overflow-x-auto -mx-2">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="font-medium">Modelo</TableHead>
+                <TableHead className="font-medium">Concepto</TableHead>
+                <TableHead className="font-medium">Periodo</TableHead>
+                <TableHead className="font-medium">Estado</TableHead>
+                <TableHead className="text-right font-medium">Importe</TableHead>
+                <TableHead className="font-medium">Fecha de pago</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {taxPayments.map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell className="font-semibold whitespace-nowrap text-foreground">
+                    Modelo {payment.tax_model_code}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {payment.notes?.trim() ? payment.notes : "Impuesto"}
+                  </TableCell>
+                  <TableCell className="tabular-nums text-foreground">{formatPeriod(payment.period_end)}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-secondary/15 text-secondary">
+                      Pagado
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right whitespace-nowrap font-semibold text-foreground tabular-nums">
+                    {formatAmount(payment.amount, payment.currency)}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">{formatDate(payment.settled_at)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </DashboardCard>
   );
