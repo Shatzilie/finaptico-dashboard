@@ -56,6 +56,8 @@ function formatAmount(amount: number, currency: string): string {
   }).format(amount);
 }
 
+const MAX_VISIBLE_ROWS = 4;
+
 export function TaxPaymentsCard() {
   const { selectedClient, loading: clientLoading } = useClientContext();
   const [taxPayments, setTaxPayments] = useState<TaxPayment[]>([]);
@@ -97,6 +99,9 @@ export function TaxPaymentsCard() {
     loadTaxPayments();
   }, [selectedClient?.code, clientLoading]);
 
+  const displayedPayments = taxPayments.slice(0, MAX_VISIBLE_ROWS);
+  const hasMore = taxPayments.length > MAX_VISIBLE_ROWS;
+
   return (
     <DashboardCard title="Pagos de impuestos" icon={Receipt}>
       {loading ? (
@@ -108,41 +113,41 @@ export function TaxPaymentsCard() {
           No hay pagos de impuestos registrados este año.
         </p>
       ) : (
-        <div className="overflow-x-auto -mx-2">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="font-medium">Modelo</TableHead>
-                <TableHead className="font-medium">Concepto</TableHead>
-                <TableHead className="font-medium">Periodo</TableHead>
-                <TableHead className="font-medium">Estado</TableHead>
-                <TableHead className="text-right font-medium">Importe</TableHead>
-                <TableHead className="font-medium">Fecha de pago</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {taxPayments.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell className="font-semibold whitespace-nowrap text-foreground">
-                    Modelo {payment.tax_model_code}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {payment.notes?.trim() ? payment.notes : "Impuesto"}
-                  </TableCell>
-                  <TableCell className="tabular-nums text-foreground">{formatPeriod(payment.period_end)}</TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-secondary/15 text-secondary">
-                      Pagado
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right whitespace-nowrap font-semibold text-foreground tabular-nums">
-                    {formatAmount(payment.amount, payment.currency)}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">{formatDate(payment.settled_at)}</TableCell>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Liquidaciones completadas en el ejercicio actual.
+          </p>
+          <div className="overflow-x-auto -mx-2">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="font-medium">Modelo</TableHead>
+                  <TableHead className="font-medium">Periodo</TableHead>
+                  <TableHead className="text-right font-medium">Importe</TableHead>
+                  <TableHead className="font-medium">Fecha</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {displayedPayments.map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell className="font-semibold whitespace-nowrap text-foreground">
+                      Modelo {payment.tax_model_code}
+                    </TableCell>
+                    <TableCell className="tabular-nums text-muted-foreground">{formatPeriod(payment.period_end)}</TableCell>
+                    <TableCell className="text-right whitespace-nowrap font-semibold text-foreground tabular-nums">
+                      {formatAmount(payment.amount, payment.currency)}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">{formatDate(payment.settled_at)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          {hasMore && (
+            <p className="text-xs text-muted-foreground/60 text-center pt-1">
+              Mostrando {MAX_VISIBLE_ROWS} de {taxPayments.length} liquidaciones.
+            </p>
+          )}
         </div>
       )}
     </DashboardCard>
