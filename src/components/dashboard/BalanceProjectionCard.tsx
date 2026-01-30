@@ -273,23 +273,29 @@ export default function BalanceProjectionCard() {
           {description}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={series}>
               <defs>
                 <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
                   <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-              <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+              <XAxis 
+                dataKey="label" 
+                tickLine={false} 
+                axisLine={false} 
+                tickMargin={10} 
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }} 
+              />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
                 tickFormatter={(value: number) =>
                   new Intl.NumberFormat("es-ES", {
                     style: "currency",
@@ -306,10 +312,23 @@ export default function BalanceProjectionCard() {
                     maximumFractionDigits: 2,
                   }).format(value)
                 }
-                contentStyle={{ color: "hsl(var(--foreground))", fontSize: 13 }}
+                contentStyle={{ 
+                  backgroundColor: "hsl(var(--card))", 
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "8px",
+                  color: "hsl(var(--foreground))", 
+                  fontSize: 13 
+                }}
                 labelStyle={{ color: "hsl(var(--muted-foreground))" }}
               />
-              <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#balanceGradient)" />
+              <Area 
+                type="monotone" 
+                dataKey="value" 
+                stroke="hsl(var(--primary))" 
+                strokeWidth={2} 
+                fillOpacity={1} 
+                fill="url(#balanceGradient)" 
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -321,14 +340,14 @@ export default function BalanceProjectionCard() {
           </p>
         )}
 
-        <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+        <div className="flex items-baseline justify-between text-xs text-muted-foreground border-t border-border/50 pt-4">
           <div>
-            <p>{dateLabel}</p>
-            <p className="font-medium text-foreground">{lastPoint.date.toLocaleDateString("es-ES")}</p>
+            <p className="font-medium uppercase tracking-wide">{dateLabel}</p>
+            <p className="font-semibold text-foreground tabular-nums mt-1">{lastPoint.date.toLocaleDateString("es-ES")}</p>
           </div>
           <div className="text-right">
-            <p>Saldo</p>
-            <p className="font-semibold text-foreground">
+            <p className="font-medium uppercase tracking-wide">Saldo</p>
+            <p className="text-lg font-semibold text-foreground tabular-nums mt-1">
               {new Intl.NumberFormat("es-ES", {
                 style: "currency",
                 currency,

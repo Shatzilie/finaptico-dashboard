@@ -60,14 +60,16 @@
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 220 14% 96%;
+    /* Premium SaaS dark theme - Deep neutral base */
+    --background: 222 47% 7%;
+    --foreground: 210 20% 98%;
 
-    --card: 222 47% 9%;
-    --card-foreground: 220 14% 96%;
+    /* Cards with subtle transparency and micro-borders */
+    --card: 222 40% 12%;
+    --card-foreground: 210 20% 98%;
 
-    --popover: 222 47% 9%;
-    --popover-foreground: 220 14% 96%;
+    --popover: 222 40% 10%;
+    --popover-foreground: 210 20% 98%;
 
     --primary: 248 75% 64%;
     --primary-foreground: 0 0% 100%;
@@ -75,30 +77,30 @@
     --secondary: 169 100% 37%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 222 47% 15%;
-    --muted-foreground: 220 9% 60%;
+    --muted: 222 30% 18%;
+    --muted-foreground: 215 16% 57%;
 
-    --accent: 248 50% 20%;
+    --accent: 248 40% 22%;
     --accent-foreground: 248 75% 80%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 47% 18%;
-    --input: 222 47% 18%;
+    --border: 220 20% 18%;
+    --input: 220 20% 18%;
     --ring: 248 75% 64%;
 
-    --text-primary: 220 14% 96%;
-    --text-secondary: 220 9% 70%;
-    --text-muted: 220 9% 60%;
+    --text-primary: 210 20% 98%;
+    --text-secondary: 215 16% 70%;
+    --text-muted: 215 16% 57%;
 
     --sidebar-background: 222 47% 8%;
-    --sidebar-foreground: 220 14% 96%;
+    --sidebar-foreground: 210 20% 98%;
     --sidebar-primary: 248 75% 64%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 248 50% 20%;
+    --sidebar-accent: 248 40% 22%;
     --sidebar-accent-foreground: 248 75% 80%;
-    --sidebar-border: 222 47% 18%;
+    --sidebar-border: 220 20% 16%;
     --sidebar-ring: 248 75% 64%;
   }
 }
@@ -120,5 +122,16 @@
 @layer utilities {
   .text-gradient {
     @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+  }
+
+  /* Premium typography for financial data */
+  .font-tabular {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* Premium card styling for dark mode */
+  .dark .card-premium {
+    @apply bg-card/60 border-white/[0.08] backdrop-blur-sm;
   }
 }
