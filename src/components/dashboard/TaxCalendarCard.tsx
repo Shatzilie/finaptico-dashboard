@@ -253,12 +253,8 @@ export function TaxCalendarCard() {
             <p className="text-xs font-medium text-muted-foreground">
               IRPF — estimación trimestre en curso
             </p>
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
-              <p className="text-[10px] text-muted-foreground">Total IRPF</p>
-              <p className="text-sm font-semibold text-primary">{formatCurrency(irpfData.irpf_total_qtd_due)}</p>
-            </div>
             
-            {/* Breakdown: Nóminas + Facturas */}
+            {/* Breakdown first: Nóminas + Facturas */}
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg border border-border p-2">
                 <p className="text-[10px] text-muted-foreground">IRPF nóminas</p>
@@ -268,6 +264,12 @@ export function TaxCalendarCard() {
                 <p className="text-[10px] text-muted-foreground">IRPF facturas</p>
                 <p className="text-sm font-semibold text-foreground">{formatCurrency(irpfData.irpf_suppliers_qtd_due)}</p>
               </div>
+            </div>
+            
+            {/* Total after breakdown */}
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-2">
+              <p className="text-[10px] text-muted-foreground">Total IRPF</p>
+              <p className="text-sm font-semibold text-primary">{formatCurrency(irpfData.irpf_total_qtd_due)}</p>
             </div>
             
             <p className="text-[10px] text-muted-foreground/70">
