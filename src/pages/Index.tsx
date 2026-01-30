@@ -5,6 +5,7 @@ import BalanceProjectionCard from "@/components/dashboard/BalanceProjectionCard"
 import { NextActionsCard } from "@/components/dashboard/NextActionsCard";
 import { TaxCalendarCard } from "@/components/dashboard/TaxCalendarCard";
 import { TaxPaymentsCard } from "@/components/dashboard/TaxPaymentsCard";
+import { PendingInvoicesCard } from "@/components/dashboard/PendingInvoicesCard";
 import { useClientContext } from "@/context/ClientContext";
 
 const Index = () => {
@@ -33,21 +34,28 @@ const Index = () => {
             </p>
           )}
         </div>
-
-        {/* Tax Payments - Solo visible para clientes */}
-        {!canSwitchClient && (
-          <div className="md:col-span-2 xl:col-span-3">
-            <TaxPaymentsCard />
-          </div>
-        )}
-
-        {/* Next Actions - Solo visible para admin */}
-        {canSwitchClient && (
-          <div className="md:col-span-2 xl:col-span-3">
-            <NextActionsCard />
-          </div>
-        )}
       </div>
+
+      {/* Pending Invoices - Solo visible para clientes */}
+      {!canSwitchClient && (
+        <div className="mt-6">
+          <PendingInvoicesCard />
+        </div>
+      )}
+
+      {/* Tax Payments - Solo visible para clientes */}
+      {!canSwitchClient && (
+        <div className="mt-6">
+          <TaxPaymentsCard />
+        </div>
+      )}
+
+      {/* Next Actions - Solo visible para admin */}
+      {canSwitchClient && (
+        <div className="mt-6">
+          <NextActionsCard />
+        </div>
+      )}
 
       {/* Texto global de contexto - modo cliente, posición secundaria */}
       {!canSwitchClient && (
