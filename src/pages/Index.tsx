@@ -1,4 +1,4 @@
-import { Info, Wallet, Scale, History } from "lucide-react";
+import { Info, Wallet, Scale } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import TreasuryCard from "@/components/dashboard/TreasuryCard";
 import BalanceProjectionCard from "@/components/dashboard/BalanceProjectionCard";
@@ -23,25 +23,26 @@ const Index = () => {
   return (
     <DashboardLayout title="Dashboard">
       {/* ═══════════════════════════════════════════════════════════════════════
-          BLOQUE 1: CAJA — Presente + Futuro inmediato + Movimiento
+          FILA 1: CAJA — Presente + Corto plazo
+          Tesorería (estrecho) | Facturas pendientes (ancho) | Evolución (medio)
       ═══════════════════════════════════════════════════════════════════════ */}
       {!canSwitchClient && (
-        <section className="mb-12">
+        <section className="mb-10">
           <SectionHeader icon={Wallet} title="Situación de caja" />
           
-          <div className="grid gap-6 lg:gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {/* Tesorería hoy */}
-            <div className="md:col-span-1">
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-12">
+            {/* Tesorería hoy - compacto */}
+            <div className="lg:col-span-3">
               <TreasuryCard />
             </div>
 
-            {/* Entradas previstas (Facturas pendientes) */}
-            <div className="md:col-span-1">
+            {/* Facturas pendientes - protagonista */}
+            <div className="lg:col-span-5">
               <PendingInvoicesCard />
             </div>
 
-            {/* Evolución de tesorería */}
-            <div className="md:col-span-2 xl:col-span-1">
+            {/* Evolución de tesorería - medio */}
+            <div className="lg:col-span-4">
               <BalanceProjectionCard />
             </div>
           </div>
@@ -49,36 +50,33 @@ const Index = () => {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          BLOQUE 2: COMPROMISOS FISCALES — Qué parte del dinero está comprometida
+          FILA 2: COMPROMISOS FISCALES — Estimaciones + Histórico
+          Misma altura y peso visual
       ═══════════════════════════════════════════════════════════════════════ */}
       {!canSwitchClient && (
-        <section className="mb-12">
+        <section className="mb-10">
           <SectionHeader icon={Scale} title="Compromisos fiscales" />
           
-          <div className="max-w-2xl">
-            <TaxCalendarCard />
-            <p className="text-xs text-muted-foreground/70 mt-4 pl-1 leading-relaxed">
-              Las cifras mostradas son estimaciones basadas en la información contable disponible en cada momento. El cierre fiscal definitivo lo realiza la gestoría y puede incluir ajustes.
-            </p>
-          </div>
-        </section>
-      )}
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+            {/* Situación fiscal estimada */}
+            <div>
+              <TaxCalendarCard />
+            </div>
 
-      {/* ═══════════════════════════════════════════════════════════════════════
-          BLOQUE 3: HISTÓRICO — Liquidaciones ya completadas
-      ═══════════════════════════════════════════════════════════════════════ */}
-      {!canSwitchClient && (
-        <section className="mb-8">
-          <SectionHeader icon={History} title="Histórico de liquidaciones" />
+            {/* Histórico de pagos */}
+            <div>
+              <TaxPaymentsCard />
+            </div>
+          </div>
           
-          <div className="max-w-3xl">
-            <TaxPaymentsCard />
-          </div>
+          <p className="text-xs text-muted-foreground/70 mt-4 pl-1 leading-relaxed max-w-2xl">
+            Las cifras mostradas son estimaciones basadas en la información contable disponible. El cierre fiscal definitivo lo realiza la gestoría y puede incluir ajustes.
+          </p>
         </section>
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          ADMIN: Next Actions
+          ADMIN: Vista alternativa
       ═══════════════════════════════════════════════════════════════════════ */}
       {canSwitchClient && (
         <div className="grid gap-8 lg:gap-10 md:grid-cols-2 xl:grid-cols-3">
@@ -100,7 +98,7 @@ const Index = () => {
         </div>
       )}
 
-      {/* Texto global de contexto - modo cliente, posición secundaria */}
+      {/* Disclaimer */}
       {!canSwitchClient && (
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
           <Info className="h-3 w-3 shrink-0" />
