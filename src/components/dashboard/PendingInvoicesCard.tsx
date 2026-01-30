@@ -50,7 +50,7 @@ function formatDaysLabel(daysToDue: number): string {
   }
 }
 
-const MAX_VISIBLE_ROWS = 8;
+const MAX_VISIBLE_ROWS = 4;
 
 export function PendingInvoicesCard() {
   const { selectedClient, loading: clientLoading } = useClientContext();
