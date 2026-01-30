@@ -152,11 +152,11 @@ export default function TreasuryCard() {
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-4">
         <div className="flex items-baseline justify-between gap-4">
           <div>
-            <p className="text-xs text-muted-foreground">{amountLabel}</p>
-            <p className="text-3xl font-semibold tracking-tight">{totalFormatted}</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{amountLabel}</p>
+            <p className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">{totalFormatted}</p>
           </div>
           {/* Solo mostrar bloque empresa en modo admin */}
           {canSwitchClient && (
@@ -169,9 +169,9 @@ export default function TreasuryCard() {
           )}
         </div>
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-3">
-          <span>{dateLabel}</span>
-          <span className="font-medium">
+        <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border/50 pt-4">
+          <span className="font-medium">{dateLabel}</span>
+          <span className="font-semibold tabular-nums">
             {new Date(data.snapshot_date).toLocaleDateString("es-ES")}
           </span>
         </div>

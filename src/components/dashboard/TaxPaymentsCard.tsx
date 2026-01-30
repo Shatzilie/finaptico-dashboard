@@ -122,18 +122,22 @@ export function TaxPaymentsCard() {
           <TableBody>
             {taxPayments.map((payment) => (
               <TableRow key={payment.id}>
-                <TableCell className="font-medium whitespace-nowrap">
+                <TableCell className="font-semibold whitespace-nowrap">
                   Modelo {payment.tax_model_code}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-muted-foreground">
                   {payment.notes?.trim() ? payment.notes : "Impuesto"}
                 </TableCell>
-                <TableCell>{formatPeriod(payment.period_end)}</TableCell>
-                <TableCell className="whitespace-nowrap">Pagado</TableCell>
-                <TableCell className="text-right whitespace-nowrap">
+                <TableCell className="tabular-nums">{formatPeriod(payment.period_end)}</TableCell>
+                <TableCell className="whitespace-nowrap">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-success/10 text-success">
+                    Pagado
+                  </span>
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap font-semibold tabular-nums">
                   {formatAmount(payment.amount, payment.currency)}
                 </TableCell>
-                <TableCell className="whitespace-nowrap">{formatDate(payment.settled_at)}</TableCell>
+                <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">{formatDate(payment.settled_at)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

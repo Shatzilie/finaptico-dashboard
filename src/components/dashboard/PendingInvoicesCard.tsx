@@ -131,25 +131,25 @@ export function PendingInvoicesCard() {
               <TableBody>
                 {displayedInvoices.map((invoice, idx) => (
                   <TableRow key={`${invoice.invoice_number}-${idx}`}>
-                    <TableCell className="max-w-[180px] truncate">
+                    <TableCell className="max-w-[180px] truncate text-muted-foreground">
                       {invoice.customer_name}
                     </TableCell>
-                    <TableCell className="font-medium whitespace-nowrap">
+                    <TableCell className="font-semibold whitespace-nowrap">
                       {invoice.invoice_number}
                     </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
+                    <TableCell className="text-right whitespace-nowrap font-semibold tabular-nums">
                       {formatAmount(invoice.amount_pending)}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">
+                    <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">
                       {formatDate(invoice.due_date)}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {invoice.due_status === "overdue" ? (
-                        <Badge variant="secondary" className="text-xs font-normal">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">
                           {formatDaysLabel(invoice.days_to_due)}
-                        </Badge>
+                        </span>
                       ) : (
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-sm text-muted-foreground tabular-nums">
                           {formatDaysLabel(invoice.days_to_due)}
                         </span>
                       )}
