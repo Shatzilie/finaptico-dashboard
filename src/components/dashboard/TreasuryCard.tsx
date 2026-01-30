@@ -152,17 +152,17 @@ export default function TreasuryCard() {
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <div className="flex items-baseline justify-between gap-4">
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{amountLabel}</p>
-            <p className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">{totalFormatted}</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{amountLabel}</p>
+            <p className="text-4xl font-semibold tracking-tight text-foreground dark:text-white tabular-nums">{totalFormatted}</p>
           </div>
           {/* Solo mostrar bloque empresa en modo admin */}
           {canSwitchClient && (
             <div className="text-right text-xs text-muted-foreground">
               <p>Empresa</p>
-              <p className="font-medium">
+              <p className="font-medium text-foreground">
                 {getClientDisplayName(selectedClient)}
               </p>
             </div>
@@ -171,14 +171,14 @@ export default function TreasuryCard() {
 
         <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border/50 pt-4">
           <span className="font-medium">{dateLabel}</span>
-          <span className="font-semibold tabular-nums">
+          <span className="font-semibold text-foreground tabular-nums">
             {new Date(data.snapshot_date).toLocaleDateString("es-ES")}
           </span>
         </div>
 
         {/* Nota de pie - solo modo cliente */}
         {!canSwitchClient && (
-          <p className="text-[10px] text-muted-foreground/70">
+          <p className="text-[10px] text-muted-foreground/60">
             Seguimiento de saldo, sin previsiones ni compromisos.
           </p>
         )}

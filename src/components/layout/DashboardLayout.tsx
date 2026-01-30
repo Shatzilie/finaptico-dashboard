@@ -13,14 +13,14 @@ function DashboardContent({ children }: DashboardLayoutProps) {
   const { collapsed, isMobile } = useSidebarContext();
 
   return (
-    <div className="min-h-screen bg-background dark:bg-[hsl(222,47%,7%)]">
+    <div className="min-h-screen bg-background">
       <AppSidebar />
       <div className={cn(
         "transition-all duration-300",
         isMobile ? "pl-0" : (collapsed ? "pl-16" : "pl-64")
       )}>
         <Topbar />
-        <main className="p-4 md:p-6 lg:p-8">
+        <main className="p-5 md:p-8 lg:p-10">
           {children}
         </main>
       </div>

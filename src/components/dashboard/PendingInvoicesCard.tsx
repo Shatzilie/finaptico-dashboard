@@ -108,7 +108,7 @@ export function PendingInvoicesCard() {
           Todas las facturas emitidas están cobradas. No hay entradas pendientes en este momento.
         </p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Status message */}
           <p className="text-sm text-muted-foreground">
             {hasOverdue
@@ -117,15 +117,15 @@ export function PendingInvoicesCard() {
           </p>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-2">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Factura</TableHead>
-                  <TableHead className="text-right">Importe pendiente</TableHead>
-                  <TableHead>Vencimiento</TableHead>
-                  <TableHead>Días</TableHead>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="font-medium">Cliente</TableHead>
+                  <TableHead className="font-medium">Factura</TableHead>
+                  <TableHead className="text-right font-medium">Importe pendiente</TableHead>
+                  <TableHead className="font-medium">Vencimiento</TableHead>
+                  <TableHead className="font-medium">Días</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -134,10 +134,10 @@ export function PendingInvoicesCard() {
                     <TableCell className="max-w-[180px] truncate text-muted-foreground">
                       {invoice.customer_name}
                     </TableCell>
-                    <TableCell className="font-semibold whitespace-nowrap">
+                    <TableCell className="font-semibold whitespace-nowrap text-foreground">
                       {invoice.invoice_number}
                     </TableCell>
-                    <TableCell className="text-right whitespace-nowrap font-semibold tabular-nums">
+                    <TableCell className="text-right whitespace-nowrap font-semibold text-foreground tabular-nums">
                       {formatAmount(invoice.amount_pending)}
                     </TableCell>
                     <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">
@@ -145,7 +145,7 @@ export function PendingInvoicesCard() {
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
                       {invoice.due_status === "overdue" ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-muted text-muted-foreground">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-muted/80 text-muted-foreground">
                           {formatDaysLabel(invoice.days_to_due)}
                         </span>
                       ) : (
@@ -162,7 +162,7 @@ export function PendingInvoicesCard() {
 
           {/* More indicator */}
           {hasMore && (
-            <p className="text-xs text-muted-foreground text-center pt-2">
+            <p className="text-xs text-muted-foreground/60 text-center pt-2">
               Mostrando {MAX_VISIBLE_ROWS} de {invoices.length} facturas pendientes.
             </p>
           )}
