@@ -10,31 +10,24 @@ type FiscalSnapshot = {
   instance_code: string;
   snapshot_generated_at: string;
   vat_quarter_start: string;
-  vat_output_qtd: number;
-  vat_supported_qtd: number;
-  vat_net_qtd: number;
+  vat_output_qtd: string | number;
+  vat_supported_qtd: string | number;
+  vat_net_qtd: string | number;
   is_year_start: string;
-  is_revenue_ytd: number;
-  is_spend_ytd: number;
-  is_profit_ytd: number;
-  is_tax_rate: number;
-  is_estimated_tax_ytd: number;
+  is_revenue_ytd: string | number;
+  is_spend_ytd: string | number;
+  is_profit_ytd: string | number;
+  is_tax_rate: string | number;
+  is_estimated_tax_ytd: string | number;
   is_has_revenue_ytd: boolean;
-  // IRPF fields (legacy, may still be present)
-  irpf_estimated_total_qtd: number | null;
-  irpf_estimated_payroll_qtd: number | null;
-  irpf_estimated_invoices_qtd: number | null;
-  irpf_estimated_purchases_qtd: number | null;
+  // IRPF fields from v_fiscal_current_snapshot
+  irpf_estimated_total_qtd: string | number | null;
+  irpf_estimated_payroll_qtd: string | number | null;
+  irpf_estimated_invoices_qtd: string | number | null;
+  irpf_estimated_purchases_qtd: string | number | null;
   irpf_quarter_start: string | null;
   irpf_quarter_end: string | null;
   irpf_has_breakdown: boolean | null;
-};
-
-type IrpfSplit = {
-  client_code: string;
-  irpf_total_qtd_due: string | number | null;
-  irpf_payroll_qtd_due: string | number | null;
-  irpf_suppliers_qtd_due: string | number | null;
 };
 
 // Helper para parsear valores numéricos que pueden venir como string desde Postgres
@@ -45,9 +38,10 @@ function parseNumericValue(value: string | number | null | undefined): number | 
 }
 
 async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot | null> {
+  // Usamos v_fiscal_current_snapshot que contiene todos los datos fiscales incluyendo IRPF
   const { data, error } = await supabase
     .schema("erp_core")
-    .from("v_dashboard_fiscal_snapshot")
+    .from("v_fiscal_current_snapshot")
     .select("*")
     .eq("client_code", clientCode)
     .maybeSingle();
@@ -57,22 +51,6 @@ async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot |
   }
 
   return data as FiscalSnapshot | null;
-}
-
-async function fetchIrpfSplit(clientCode: string): Promise<IrpfSplit[]> {
-  // Ojo: esta vista puede devolver varias filas (p.ej. multi-cliente en contexto admin).
-  // Filtramos en frontend por el cliente activo para evitar coger el primer elemento del array.
-  const { data, error } = await supabase
-    .schema("erp_core")
-    .from("v_dashboard_fiscal_irpf_qtd_split")
-    .select("*")
-    .eq("client_code", clientCode);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return (data ?? []) as IrpfSplit[];
 }
 
 function formatCurrency(value: number | null | undefined, currency = "EUR"): string {
@@ -96,12 +74,6 @@ function isValidDate(dateStr: string | null | undefined): boolean {
   return !isNaN(date.getTime()) && date.getFullYear() > 1970;
 }
 
-function formatQuarter(dateStr: string): string {
-  const date = new Date(dateStr);
-  const quarter = Math.ceil((date.getMonth() + 1) / 3);
-  return `Q${quarter} ${date.getFullYear()}`;
-}
-
 // Verificar si hay base fiscal suficiente (ingresos YTD > 0, fechas válidas, datos significativos)
 function hasSufficientFiscalBasis(data: FiscalSnapshot | null, hasValidVatDate: boolean, hasValidIsDate: boolean): boolean {
   if (!data) return false;
@@ -109,44 +81,38 @@ function hasSufficientFiscalBasis(data: FiscalSnapshot | null, hasValidVatDate: 
   // Si no hay fechas válidas, no hay base fiscal
   if (!hasValidVatDate && !hasValidIsDate) return false;
   
+  const revenueYtd = parseNumericValue(data.is_revenue_ytd);
+  const vatOutput = parseNumericValue(data.vat_output_qtd);
+  const vatSupported = parseNumericValue(data.vat_supported_qtd);
+  const vatNet = parseNumericValue(data.vat_net_qtd);
+  const isTax = parseNumericValue(data.is_estimated_tax_ytd);
+  
   // Verificar si hay ingresos YTD (indicador de actividad fiscal real)
-  const hasRevenueYtd = data.is_revenue_ytd !== null && data.is_revenue_ytd !== undefined && data.is_revenue_ytd > 0;
+  const hasRevenueYtd = revenueYtd !== null && revenueYtd > 0;
   
   // Verificar si hay al menos algún valor fiscal significativo (no solo 0,00)
   const hasVatActivity = 
-    (data.vat_output_qtd !== null && data.vat_output_qtd !== undefined && data.vat_output_qtd !== 0) ||
-    (data.vat_supported_qtd !== null && data.vat_supported_qtd !== undefined && data.vat_supported_qtd !== 0) ||
-    (data.vat_net_qtd !== null && data.vat_net_qtd !== undefined && data.vat_net_qtd !== 0);
+    (vatOutput !== null && vatOutput !== 0) ||
+    (vatSupported !== null && vatSupported !== 0) ||
+    (vatNet !== null && vatNet !== 0);
   
-  const hasIsActivity = 
-    (data.is_estimated_tax_ytd !== null && data.is_estimated_tax_ytd !== undefined && data.is_estimated_tax_ytd !== 0);
+  const hasIsActivity = isTax !== null && isTax !== 0;
   
   // Hay base suficiente si hay ingresos YTD O si hay actividad fiscal real
   return hasRevenueYtd || hasVatActivity || hasIsActivity;
 }
 
 export function TaxCalendarCard() {
-  const { selectedClient, loading: clientsLoading, canSwitchClient } = useClientContext();
+  const { selectedClient, loading: clientsLoading } = useClientContext();
   const clientCode = selectedClient?.code ?? null;
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["fiscal-snapshot", clientCode],
+    queryKey: ["fiscal-current-snapshot", clientCode],
     queryFn: () => fetchFiscalSnapshot(clientCode as string),
     enabled: !!clientCode && !clientsLoading,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
-
-  const { data: irpfDataRaw, isLoading: irpfLoading } = useQuery({
-    queryKey: ["irpf-split", clientCode],
-    queryFn: () => fetchIrpfSplit(clientCode as string),
-    enabled: !!clientCode && !clientsLoading,
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  // Filtrado explícito por cliente activo para evitar coger registros de otro cliente o "undefined"
-  const irpfData = irpfDataRaw?.find((r) => r.client_code === clientCode) ?? null;
 
   // Loading clientes
   if (clientsLoading) {
@@ -204,9 +170,6 @@ export function TaxCalendarCard() {
   const hasValidVatDate = isValidDate(data?.vat_quarter_start);
   const hasValidIsDate = isValidDate(data?.is_year_start);
   
-  // IRPF: mostrar siempre el bloque (con 0,00 € si no hay datos)
-  const showIrpfSection = true;
-  
   // Validación de base fiscal suficiente (modo cliente no debe ver 0,00 € sin actividad real)
   const hasFiscalBasis = hasSufficientFiscalBasis(data, hasValidVatDate, hasValidIsDate);
 
@@ -223,6 +186,18 @@ export function TaxCalendarCard() {
     );
   }
 
+  // Parsear valores numéricos
+  const vatOutput = parseNumericValue(data.vat_output_qtd);
+  const vatSupported = parseNumericValue(data.vat_supported_qtd);
+  const vatNet = parseNumericValue(data.vat_net_qtd);
+  const isTaxRate = parseNumericValue(data.is_tax_rate);
+  const isEstimatedTax = parseNumericValue(data.is_estimated_tax_ytd);
+  
+  // IRPF: usar campos de v_fiscal_current_snapshot
+  const irpfPayroll = parseNumericValue(data.irpf_estimated_payroll_qtd);
+  const irpfInvoices = parseNumericValue(data.irpf_estimated_invoices_qtd);
+  const irpfTotal = parseNumericValue(data.irpf_estimated_total_qtd);
+
   // Texto de actualización solo si la fecha es válida
   const hasValidGeneratedDate = isValidDate(data.snapshot_generated_at);
 
@@ -238,15 +213,15 @@ export function TaxCalendarCard() {
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Repercutido</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(data.vat_output_qtd)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(vatOutput)}</p>
               </div>
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Soportado</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(data.vat_supported_qtd)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(vatSupported)}</p>
               </div>
               <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Neto</p>
-                <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(data.vat_net_qtd)}</p>
+                <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(vatNet)}</p>
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground/60">
@@ -255,58 +230,40 @@ export function TaxCalendarCard() {
           </div>
         )}
 
-        {/* IRPF Section - usando datos de v_dashboard_fiscal_irpf_qtd_split */}
-        {showIrpfSection && (
-          <div className="space-y-3">
-            <p className="text-xs font-medium text-muted-foreground">
-              IRPF — estimación trimestre en curso
-            </p>
-            
-            {/* Breakdown first: Nóminas + Facturas */}
-            {(() => {
-              const payrollValue = parseNumericValue(irpfData?.irpf_payroll_qtd_due);
-              const suppliersValue = parseNumericValue(irpfData?.irpf_suppliers_qtd_due);
-              const totalValue = parseNumericValue(irpfData?.irpf_total_qtd_due);
-              
-              return (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-lg border border-border/50 p-4">
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
-                      <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
-                        {irpfData
-                          ? formatCurrency(payrollValue !== null ? Math.abs(payrollValue) : null)
-                          : formatCurrency(0)}
-                      </p>
-                    </div>
-                    <div className="rounded-lg border border-border/50 p-4">
-                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
-                      <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
-                        {irpfData
-                          ? formatCurrency(suppliersValue !== null ? Math.abs(suppliersValue) : null)
-                          : formatCurrency(0)}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Total after breakdown */}
-                  <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
-                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
-                    <p className="text-base font-semibold text-primary tabular-nums mt-2">
-                      {irpfData
-                        ? formatCurrency(totalValue !== null ? Math.abs(totalValue) : null)
-                        : formatCurrency(0)}
-                    </p>
-                  </div>
-                </>
-              );
-            })()}
-            
-            <p className="text-[10px] text-muted-foreground/60">
-              Parte del saldo actual está comprometido para cubrir IRPF. Aunque esté en cuenta, no es dinero disponible.
+        {/* IRPF Section - SIEMPRE se muestra, usando campos de v_fiscal_current_snapshot */}
+        <div className="space-y-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            IRPF — estimación trimestre en curso
+          </p>
+          
+          {/* Breakdown: Nóminas + Facturas */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border border-border/50 p-4">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
+              <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
+                {irpfPayroll !== null ? formatCurrency(Math.abs(irpfPayroll)) : formatCurrency(0)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border/50 p-4">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
+              <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
+                {irpfInvoices !== null ? formatCurrency(Math.abs(irpfInvoices)) : formatCurrency(0)}
+              </p>
+            </div>
+          </div>
+          
+          {/* Total IRPF */}
+          <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
+            <p className="text-base font-semibold text-primary tabular-nums mt-2">
+              {irpfTotal !== null ? formatCurrency(Math.abs(irpfTotal)) : formatCurrency(0)}
             </p>
           </div>
-        )}
+          
+          <p className="text-[10px] text-muted-foreground/60">
+            Parte del saldo actual está comprometido para cubrir IRPF. Aunque esté en cuenta, no es dinero disponible.
+          </p>
+        </div>
 
         {/* IS Section */}
         {hasValidIsDate && (
@@ -317,11 +274,11 @@ export function TaxCalendarCard() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Tipo</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatPercent(data.is_tax_rate)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatPercent(isTaxRate)}</p>
               </div>
               <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IS estimado</p>
-                <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(data.is_estimated_tax_ytd)}</p>
+                <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(isEstimatedTax)}</p>
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground/60">
