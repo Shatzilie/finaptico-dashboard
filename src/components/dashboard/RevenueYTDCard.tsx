@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from "../ui/alert";
 type ClientOverview = {
   client_code: string;
   sales_ytd: string | number | null;
-  currency?: string;
 };
 
 function parseNumber(raw: unknown): number {
@@ -26,7 +25,7 @@ async function fetchRevenueYTD(clientCode: string): Promise<ClientOverview | nul
   const { data, error } = await supabase
     .schema("erp_core")
     .from("v_dashboard_client_overview_current")
-    .select("client_code, sales_ytd, currency")
+    .select("client_code, sales_ytd")
     .eq("client_code", clientCode)
     .maybeSingle();
 
@@ -58,10 +57,9 @@ export default function RevenueYTDCard() {
   const revenueFormatted = useMemo(() => {
     if (!data) return null;
     const revenue = parseNumber(data.sales_ytd);
-    const currency = data.currency ?? "EUR";
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
-      currency,
+      currency: "EUR",
       maximumFractionDigits: 2,
     }).format(revenue);
   }, [data]);
