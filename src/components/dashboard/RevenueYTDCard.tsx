@@ -161,7 +161,7 @@ export default function RevenueYTDCard() {
       <CardContent className="space-y-6">
         <div>
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-            Ingresos {currentYear}
+            Total facturado en el ejercicio actual
           </p>
           <p className="text-4xl font-semibold tracking-tight text-foreground dark:text-white tabular-nums">
             {revenueFormatted}
@@ -176,7 +176,7 @@ export default function RevenueYTDCard() {
         </div>
 
         <p className="text-[10px] text-muted-foreground/60">
-          Suma de facturas emitidas en el ejercicio actual.
+          Se acumulan únicamente las facturas emitidas y contabilizadas. No representa una previsión del cierre anual.
         </p>
       </CardContent>
     </Card>

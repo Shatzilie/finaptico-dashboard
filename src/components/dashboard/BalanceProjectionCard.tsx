@@ -135,10 +135,10 @@ export default function BalanceProjectionCard() {
   const title = canSwitchClient ? "Proyección de saldo" : "Evolución de tesorería";
   const description = canSwitchClient
     ? "Evolución histórica del saldo del cliente seleccionado"
-    : "Histórico para observar tendencias";
+    : "Histórico para seguimiento de cambios";
   const dateLabel = canSwitchClient ? "Último registro" : "Actualizado";
   const chartFooterText = !canSwitchClient 
-    ? "Referencia visual, no es una previsión." 
+    ? "Representación histórica. No anticipa saldos futuros ni necesidades de liquidez." 
     : null;
 
   // Procesar datos para el gráfico

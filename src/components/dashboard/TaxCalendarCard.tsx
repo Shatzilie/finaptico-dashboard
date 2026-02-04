@@ -235,6 +235,9 @@ export function TaxCalendarCard() {
 
   return (
     <DashboardCard title="Situación fiscal estimada" icon={Calendar}>
+      <p className="text-xs text-muted-foreground mb-4">
+        Referencia según información contable registrada
+      </p>
       <div className="space-y-6">
         {/* IVA Section */}
         {hasValidVatDate && (
@@ -257,7 +260,7 @@ export function TaxCalendarCard() {
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground/60">
-              Según facturación y gastos registrados.
+              Importes derivados de la facturación y gastos registrados en contabilidad.
             </p>
           </div>
         )}
@@ -293,7 +296,7 @@ export function TaxCalendarCard() {
           </div>
           
           <p className="text-[10px] text-muted-foreground/60">
-            Parte del saldo actual está comprometido para cubrir IRPF. Aunque esté en cuenta, no es dinero disponible.
+            La información refleja el estado actual de los datos contabilizados.
           </p>
         </div>
 
@@ -314,10 +317,15 @@ export function TaxCalendarCard() {
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground/60">
-              Resultado acumulado, sujeto a variaciones.
+              Importes derivados de la facturación y gastos registrados en contabilidad.
             </p>
           </div>
         )}
+
+        {/* Limit note */}
+        <p className="text-[10px] text-muted-foreground/60 border-t border-border/50 pt-4">
+          Puede variar por ajustes, regularizaciones o cambios posteriores en contabilidad. No equivale a una liquidación oficial ni a una presentación ante la administración.
+        </p>
 
         {/* Footer */}
         {hasValidGeneratedDate && (
