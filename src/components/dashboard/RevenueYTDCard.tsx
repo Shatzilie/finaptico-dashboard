@@ -7,9 +7,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui
 import { Skeleton } from "../ui/skeleton";
 import { Alert, AlertDescription } from "../ui/alert";
 
-type FiscalSnapshot = {
+type ClientOverview = {
   client_code: string;
-  is_revenue_ytd: string | number | null;
+  sales_ytd: string | number | null;
   currency?: string;
 };
 
@@ -22,11 +22,11 @@ function parseNumber(raw: unknown): number {
   return 0;
 }
 
-async function fetchRevenueYTD(clientCode: string): Promise<FiscalSnapshot | null> {
+async function fetchRevenueYTD(clientCode: string): Promise<ClientOverview | null> {
   const { data, error } = await supabase
     .schema("erp_core")
-    .from("v_fiscal_current_snapshot")
-    .select("client_code, is_revenue_ytd, currency")
+    .from("v_dashboard_client_overview_current")
+    .select("client_code, sales_ytd, currency")
     .eq("client_code", clientCode)
     .maybeSingle();
 
@@ -34,7 +34,7 @@ async function fetchRevenueYTD(clientCode: string): Promise<FiscalSnapshot | nul
     throw new Error(error.message);
   }
 
-  return data as FiscalSnapshot | null;
+  return data as ClientOverview | null;
 }
 
 export default function RevenueYTDCard() {
@@ -57,7 +57,7 @@ export default function RevenueYTDCard() {
 
   const revenueFormatted = useMemo(() => {
     if (!data) return null;
-    const revenue = parseNumber(data.is_revenue_ytd);
+    const revenue = parseNumber(data.sales_ytd);
     const currency = data.currency ?? "EUR";
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
