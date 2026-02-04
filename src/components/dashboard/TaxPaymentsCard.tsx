@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { useClientContext } from "@/context/ClientContext";
 import { supabase } from "@/lib/supabaseClient";
+import { formatCurrency } from "@/lib/utils";
 import { Receipt } from "lucide-react";
 import {
   Table,
@@ -50,10 +51,7 @@ function formatDate(dateStr: string): string {
 }
 
 function formatAmount(amount: number, currency: string): string {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: currency || "EUR",
-  }).format(amount);
+  return formatCurrency(amount, currency || "EUR");
 }
 
 const MAX_VISIBLE_ROWS = 4;

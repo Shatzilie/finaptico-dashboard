@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useClientContext } from "../../context/ClientContext";
 import { supabase } from "../../lib/supabaseClient";
+import { formatCurrency } from "../../lib/utils";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
 import { Alert, AlertDescription } from "../ui/alert";
@@ -230,21 +231,11 @@ export default function Revenue12MonthsCard() {
                 tickMargin={10}
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
                 tickFormatter={(value: number) =>
-                  new Intl.NumberFormat("es-ES", {
-                    style: "currency",
-                    currency: "EUR",
-                    maximumFractionDigits: 0,
-                  }).format(value)
+                  formatCurrency(value, "EUR").replace(/,\d{2}$/, "")
                 }
               />
               <Tooltip
-                formatter={(v) =>
-                  new Intl.NumberFormat("es-ES", {
-                    style: "currency",
-                    currency: "EUR",
-                    maximumFractionDigits: 2,
-                  }).format(Number(v))
-                }
+                formatter={(v) => formatCurrency(Number(v), "EUR")}
                 contentStyle={{ 
                   backgroundColor: "hsl(var(--card))", 
                   border: "1px solid hsl(var(--border))",
@@ -274,11 +265,7 @@ export default function Revenue12MonthsCard() {
           <div className="text-right">
             <p className="font-medium uppercase tracking-wide text-[10px]">Suma de la facturación registrada</p>
             <p className="text-xl font-semibold text-foreground dark:text-white tabular-nums mt-1">
-              {new Intl.NumberFormat("es-ES", {
-                style: "currency",
-                currency: "EUR",
-                maximumFractionDigits: 2,
-              }).format(totalRevenue)}
+              {formatCurrency(totalRevenue, "EUR")}
             </p>
             {isFetching && <p className="mt-1 text-[11px] text-muted-foreground">Actualizando...</p>}
           </div>

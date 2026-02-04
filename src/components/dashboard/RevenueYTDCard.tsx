@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useClientContext } from "../../context/ClientContext";
 import { supabase } from "../../lib/supabaseClient";
+import { formatCurrency } from "../../lib/utils";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
 import { Alert, AlertDescription } from "../ui/alert";
@@ -57,11 +58,7 @@ export default function RevenueYTDCard() {
   const revenueFormatted = useMemo(() => {
     if (!data) return null;
     const revenue = parseNumber(data.sales_ytd);
-    return new Intl.NumberFormat("es-ES", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 2,
-    }).format(revenue);
+    return formatCurrency(revenue, "EUR");
   }, [data]);
 
   const currentYear = new Date().getFullYear();

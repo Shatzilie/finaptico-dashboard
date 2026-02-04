@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useClientContext, getClientDisplayName } from "../../context/ClientContext";
 import { supabase } from "../../lib/supabaseClient";
+import { formatCurrency } from "../../lib/utils";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
 import { Alert, AlertDescription } from "../ui/alert";
@@ -45,11 +46,7 @@ export default function TreasuryCard() {
   const totalFormatted = useMemo(() => {
     if (!data) return null;
     const balance = typeof data.total_balance === "number" ? data.total_balance : parseFloat(String(data.total_balance)) || 0;
-    return new Intl.NumberFormat("es-ES", {
-      style: "currency",
-      currency: data.currency || "EUR",
-      maximumFractionDigits: 2,
-    }).format(balance);
+    return formatCurrency(balance, data.currency || "EUR");
   }, [data]);
 
   // Textos adaptativos según modo (sentence case)
