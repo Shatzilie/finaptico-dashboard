@@ -255,18 +255,24 @@ export function TaxCalendarCard() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfData?.irpf_payroll_qtd_due ?? 0)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
+                  {irpfData ? formatCurrency(irpfData.irpf_payroll_qtd_due) : formatCurrency(0)}
+                </p>
               </div>
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfData?.irpf_suppliers_qtd_due ?? 0)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
+                  {irpfData ? formatCurrency(irpfData.irpf_suppliers_qtd_due) : formatCurrency(0)}
+                </p>
               </div>
             </div>
             
             {/* Total after breakdown */}
             <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
-              <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(irpfData?.irpf_total_qtd_due ?? 0)}</p>
+              <p className="text-base font-semibold text-primary tabular-nums mt-2">
+                {irpfData ? formatCurrency(irpfData.irpf_total_qtd_due) : formatCurrency(0)}
+              </p>
             </div>
             
             <p className="text-[10px] text-muted-foreground/60">
