@@ -103,15 +103,13 @@ export function PendingInvoicesCard() {
         <p className="text-destructive text-sm">{error}</p>
       ) : invoices.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          Todas las facturas emitidas están cobradas. No hay entradas pendientes en este momento.
+          Todas las facturas emitidas figuran como cobradas a la fecha actual.
         </p>
       ) : (
         <div className="space-y-4">
           {/* Status message */}
           <p className="text-sm text-muted-foreground">
-            {hasOverdue
-              ? "Hay cobros con vencimiento superado. Conviene tenerlo en cuenta al planificar la tesorería."
-              : "Cobros pendientes dentro del plazo acordado."}
+            Importes facturados pendientes de cobro según fechas de vencimiento registradas.
           </p>
 
           {/* Desktop Table - hidden on small screens */}
@@ -192,12 +190,17 @@ export function PendingInvoicesCard() {
             ))}
           </div>
 
-          {/* More indicator */}
-          {hasMore && (
-            <p className="text-xs text-muted-foreground/60 text-center pt-1">
-              Mostrando {MAX_VISIBLE_ROWS} de {invoices.length} facturas pendientes.
+          {/* More indicator + limit note */}
+          <div className="space-y-1 pt-1">
+            {hasMore && (
+              <p className="text-xs text-muted-foreground/60 text-center">
+                Mostrando {MAX_VISIBLE_ROWS} de {invoices.length} facturas pendientes.
+              </p>
+            )}
+            <p className="text-[10px] text-muted-foreground/60 text-center">
+              La clasificación se basa únicamente en la fecha de vencimiento. No evalúa probabilidad de cobro ni riesgo asociado.
             </p>
-          )}
+          </div>
         </div>
       )}
     </DashboardCard>

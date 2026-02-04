@@ -57,8 +57,8 @@ export default function TreasuryCard() {
   const description = canSwitchClient 
     ? "Saldo total del cliente seleccionado" 
     : "Saldo en cuentas según información disponible";
-  const amountLabel = "Saldo bancario";
-  const dateLabel = canSwitchClient ? "Fecha snapshot" : "Actualizado";
+  const amountLabel = "Saldo bancario registrado en contabilidad a la fecha indicada";
+  const dateLabel = canSwitchClient ? "Fecha snapshot" : "Corresponde a movimientos contabilizados hasta";
 
   // 1) Error cargando clientes
   if (clientsError) {
@@ -179,7 +179,7 @@ export default function TreasuryCard() {
         {/* Nota de pie - solo modo cliente */}
         {!canSwitchClient && (
           <p className="text-[10px] text-muted-foreground/60">
-            Seguimiento de saldo, sin previsiones ni compromisos.
+            No incluye previsiones, compromisos futuros ni validación bancaria en tiempo real.
           </p>
         )}
       </CardContent>

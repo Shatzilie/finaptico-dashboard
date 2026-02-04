@@ -188,7 +188,7 @@ export default function Revenue12MonthsCard() {
       <Card>
         <CardHeader>
           <CardTitle>Facturación últimos 12 meses</CardTitle>
-          <CardDescription>Ingresos por facturas emitidas</CardDescription>
+          <CardDescription>Facturación mensual registrada en contabilidad durante los últimos 12 meses</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
@@ -204,7 +204,7 @@ export default function Revenue12MonthsCard() {
     <Card className="font-sans">
       <CardHeader>
         <CardTitle>Facturación últimos 12 meses</CardTitle>
-        <CardDescription>Ingresos por facturas emitidas</CardDescription>
+        <CardDescription>Facturación mensual registrada en contabilidad durante los últimos 12 meses</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="h-48 w-full">
@@ -268,11 +268,11 @@ export default function Revenue12MonthsCard() {
 
         <div className="flex items-baseline justify-between text-xs text-muted-foreground border-t border-border/50 pt-5">
           <div>
-            <p className="font-medium uppercase tracking-wide text-[10px]">Periodo</p>
-            <p className="font-semibold text-foreground tabular-nums mt-1">Últimos 12 meses</p>
+            <p className="font-medium uppercase tracking-wide text-[10px]">Periodo mostrado</p>
+            <p className="font-semibold text-foreground tabular-nums mt-1">Últimos 12 meses según fecha actual</p>
           </div>
           <div className="text-right">
-            <p className="font-medium uppercase tracking-wide text-[10px]">Total acumulado</p>
+            <p className="font-medium uppercase tracking-wide text-[10px]">Suma de la facturación registrada</p>
             <p className="text-xl font-semibold text-foreground dark:text-white tabular-nums mt-1">
               {new Intl.NumberFormat("es-ES", {
                 style: "currency",
@@ -283,6 +283,10 @@ export default function Revenue12MonthsCard() {
             {isFetching && <p className="mt-1 text-[11px] text-muted-foreground">Actualizando...</p>}
           </div>
         </div>
+
+        <p className="text-[10px] text-muted-foreground/60">
+          No incluye gastos, ajustes posteriores ni análisis de resultado.
+        </p>
       </CardContent>
     </Card>
   );
