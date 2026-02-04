@@ -1,5 +1,5 @@
 // src/components/dashboard/Revenue12MonthsCard.tsx
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useClientContext } from "../../context/ClientContext";
@@ -90,6 +90,14 @@ export default function Revenue12MonthsCard() {
   const totalRevenue = useMemo(() => {
     return series.reduce((acc, p) => acc + (Number.isFinite(p.value) ? p.value : 0), 0);
   }, [series]);
+
+  // Validación rápida (temporal): asegurar que llegan valores > 0 y que el dataset del chart es `series`
+  useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log("revenue12m raw", data);
+    // eslint-disable-next-line no-console
+    console.log("revenue12m series", series);
+  }, [data, series]);
 
   // 1) Error cargando clientes
   if (clientsError) {
@@ -230,12 +238,12 @@ export default function Revenue12MonthsCard() {
                 }
               />
               <Tooltip
-                formatter={(value: number) =>
+                formatter={(v) =>
                   new Intl.NumberFormat("es-ES", {
                     style: "currency",
                     currency: "EUR",
                     maximumFractionDigits: 2,
-                  }).format(value)
+                  }).format(Number(v))
                 }
                 contentStyle={{ 
                   backgroundColor: "hsl(var(--card))", 
