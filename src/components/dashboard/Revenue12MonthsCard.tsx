@@ -230,9 +230,7 @@ export default function Revenue12MonthsCard() {
                 axisLine={false}
                 tickMargin={10}
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
-                tickFormatter={(value: number) =>
-                  formatCurrency(value, "EUR").replace(/,\d{2}$/, "")
-                }
+                tickFormatter={(value: number) => formatCurrency(value, "EUR")}
               />
               <Tooltip
                 formatter={(v) => formatCurrency(Number(v), "EUR")}

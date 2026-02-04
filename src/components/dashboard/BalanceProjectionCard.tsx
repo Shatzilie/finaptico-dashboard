@@ -295,9 +295,7 @@ export default function BalanceProjectionCard() {
                 axisLine={false}
                 tickMargin={10}
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
-                tickFormatter={(value: number) =>
-                  formatCurrency(value, currency).replace(/,\d{2}$/, "")
-                }
+                tickFormatter={(value: number) => formatCurrency(value, currency)}
               />
               <Tooltip
                 formatter={(value: number) => formatCurrency(value, currency)}

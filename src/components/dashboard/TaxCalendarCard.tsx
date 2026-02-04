@@ -4,7 +4,7 @@ import { DashboardCard } from "./DashboardCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClientContext } from "@/context/ClientContext";
 import { supabase } from "@/lib/supabaseClient";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatNumber } from "@/lib/utils";
 
 type FiscalSnapshot = {
   client_code: string;
@@ -81,7 +81,7 @@ async function fetchIrpfSplit(clientCode: string): Promise<IrpfSplit | null> {
 
 function formatPercent(value: number | null | undefined): string {
   if (value === null || value === undefined) return "-";
-  return `${(value * 100).toFixed(1)}%`;
+  return `${formatNumber(value * 100, 1)}%`;
 }
 
 function isValidDate(dateStr: string | null | undefined): boolean {
