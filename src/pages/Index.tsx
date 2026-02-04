@@ -1,4 +1,4 @@
-import { Info, Wallet, Scale } from "lucide-react";
+import { Info, Wallet, Scale, TrendingUp } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import TreasuryCard from "@/components/dashboard/TreasuryCard";
 import BalanceProjectionCard from "@/components/dashboard/BalanceProjectionCard";
@@ -6,6 +6,8 @@ import { NextActionsCard } from "@/components/dashboard/NextActionsCard";
 import { TaxCalendarCard } from "@/components/dashboard/TaxCalendarCard";
 import { TaxPaymentsCard } from "@/components/dashboard/TaxPaymentsCard";
 import { PendingInvoicesCard } from "@/components/dashboard/PendingInvoicesCard";
+import Revenue12MonthsCard from "@/components/dashboard/Revenue12MonthsCard";
+import RevenueYTDCard from "@/components/dashboard/RevenueYTDCard";
 import { useClientContext } from "@/context/ClientContext";
 
 const SectionHeader = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (
@@ -45,12 +47,34 @@ const Index = () => {
             <div className="lg:col-span-4">
               <BalanceProjectionCard />
             </div>
+        </div>
+      </section>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          FILA 2: FACTURACIÓN — Histórico 12m + YTD
+          Entre Caja y Compromisos fiscales
+      ═══════════════════════════════════════════════════════════════════════ */}
+      {!canSwitchClient && (
+        <section className="mb-10">
+          <SectionHeader icon={TrendingUp} title="Facturación" />
+          
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+            {/* Facturación últimos 12 meses - bloque ancho */}
+            <div>
+              <Revenue12MonthsCard />
+            </div>
+
+            {/* Facturación año en curso - bloque estrecho */}
+            <div>
+              <RevenueYTDCard />
+            </div>
           </div>
         </section>
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          FILA 2: COMPROMISOS FISCALES — Estimaciones + Histórico
+          FILA 3: COMPROMISOS FISCALES — Estimaciones + Histórico
           Misma altura y peso visual
       ═══════════════════════════════════════════════════════════════════════ */}
       {!canSwitchClient && (
