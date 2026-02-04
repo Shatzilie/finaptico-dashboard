@@ -59,19 +59,20 @@ async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot |
   return data as FiscalSnapshot | null;
 }
 
-async function fetchIrpfSplit(clientCode: string): Promise<IrpfSplit | null> {
+async function fetchIrpfSplit(clientCode: string): Promise<IrpfSplit[]> {
+  // Ojo: esta vista puede devolver varias filas (p.ej. multi-cliente en contexto admin).
+  // Filtramos en frontend por el cliente activo para evitar coger el primer elemento del array.
   const { data, error } = await supabase
     .schema("erp_core")
     .from("v_dashboard_fiscal_irpf_qtd_split")
     .select("*")
-    .eq("client_code", clientCode)
-    .maybeSingle();
+    .eq("client_code", clientCode);
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return data as IrpfSplit | null;
+  return (data ?? []) as IrpfSplit[];
 }
 
 function formatCurrency(value: number | null | undefined, currency = "EUR"): string {
@@ -136,13 +137,16 @@ export function TaxCalendarCard() {
     refetchOnWindowFocus: false,
   });
 
-  const { data: irpfData, isLoading: irpfLoading } = useQuery({
+  const { data: irpfDataRaw, isLoading: irpfLoading } = useQuery({
     queryKey: ["irpf-split", clientCode],
     queryFn: () => fetchIrpfSplit(clientCode as string),
     enabled: !!clientCode && !clientsLoading,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
+
+  // Filtrado explícito por cliente activo para evitar coger registros de otro cliente o "undefined"
+  const irpfData = irpfDataRaw?.find((r) => r.client_code === clientCode) ?? null;
 
   // Loading clientes
   if (clientsLoading) {
@@ -270,13 +274,17 @@ export function TaxCalendarCard() {
                     <div className="rounded-lg border border-border/50 p-4">
                       <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
                       <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
-                        {payrollValue !== null ? formatCurrency(Math.abs(payrollValue)) : formatCurrency(0)}
+                        {irpfData
+                          ? formatCurrency(payrollValue !== null ? Math.abs(payrollValue) : null)
+                          : formatCurrency(0)}
                       </p>
                     </div>
                     <div className="rounded-lg border border-border/50 p-4">
                       <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
                       <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
-                        {suppliersValue !== null ? formatCurrency(Math.abs(suppliersValue)) : formatCurrency(0)}
+                        {irpfData
+                          ? formatCurrency(suppliersValue !== null ? Math.abs(suppliersValue) : null)
+                          : formatCurrency(0)}
                       </p>
                     </div>
                   </div>
@@ -285,7 +293,9 @@ export function TaxCalendarCard() {
                   <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
                     <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
                     <p className="text-base font-semibold text-primary tabular-nums mt-2">
-                      {totalValue !== null ? formatCurrency(Math.abs(totalValue)) : formatCurrency(0)}
+                      {irpfData
+                        ? formatCurrency(totalValue !== null ? Math.abs(totalValue) : null)
+                        : formatCurrency(0)}
                     </p>
                   </div>
                 </>
