@@ -11,8 +11,7 @@ import { Alert, AlertDescription } from "../ui/alert";
 type RevenueRow = {
   client_code: string;
   month: string;
-  revenue: string | number;
-  currency: string;
+  total_revenue: string | number;
 };
 
 type ChartPoint = {
@@ -34,7 +33,7 @@ async function fetchRevenue12Months(clientCode: string): Promise<RevenueRow[]> {
   const { data, error } = await supabase
     .schema("erp_core")
     .from("v_dashboard_revenue_12m")
-    .select("*")
+    .select("month,total_revenue")
     .eq("client_code", clientCode)
     .order("month", { ascending: true });
 
@@ -64,27 +63,32 @@ export default function Revenue12MonthsCard() {
   });
 
   // Procesar datos para el gráfico
-  const series: ChartPoint[] = useMemo(() => {
-    if (!data || data.length === 0) return [];
+  const { series, parseError } = useMemo(() => {
+    if (!data || data.length === 0) return { series: [] as ChartPoint[], parseError: null };
 
-    return data.map((row) => {
-      const revenue = parseNumber(row.revenue);
+    const points: ChartPoint[] = [];
+    let errorFound: string | null = null;
+
+    for (const row of data) {
+      const value = Number(row.total_revenue);
+      if (!Number.isFinite(value)) {
+        errorFound = `Error de parseo: "${row.total_revenue}" no es un número válido`;
+        break;
+      }
       const monthDate = new Date(row.month);
       const label = monthDate.toLocaleDateString("es-ES", {
         month: "short",
         year: "2-digit",
       });
+      points.push({ label, value, date: monthDate });
+    }
 
-      return { label, value: revenue, date: monthDate };
-    });
+    return { series: errorFound ? [] : points, parseError: errorFound };
   }, [data]);
-
-  // Moneda del cliente
-  const currency = data?.[0]?.currency ?? "EUR";
 
   // Suma total de los 12 meses
   const totalRevenue = useMemo(() => {
-    return series.reduce((acc, point) => acc + point.value, 0);
+    return series.reduce((acc, p) => acc + (Number.isFinite(p.value) ? p.value : 0), 0);
   }, [series]);
 
   // 1) Error cargando clientes
@@ -153,7 +157,24 @@ export default function Revenue12MonthsCard() {
     );
   }
 
-  // 5) Sin datos
+  // 5) Error de parseo
+  if (parseError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Facturación últimos 12 meses</CardTitle>
+          <CardDescription>Error al procesar datos</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertDescription>{parseError}</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // 6) Sin datos
   if (!data || data.length === 0) {
     return (
       <Card>
@@ -170,7 +191,7 @@ export default function Revenue12MonthsCard() {
     );
   }
 
-  // 6) Vista normal con gráfico
+  // 7) Vista normal con gráfico
   return (
     <Card className="font-sans">
       <CardHeader>
@@ -203,7 +224,7 @@ export default function Revenue12MonthsCard() {
                 tickFormatter={(value: number) =>
                   new Intl.NumberFormat("es-ES", {
                     style: "currency",
-                    currency,
+                    currency: "EUR",
                     maximumFractionDigits: 0,
                   }).format(value)
                 }
@@ -212,7 +233,7 @@ export default function Revenue12MonthsCard() {
                 formatter={(value: number) =>
                   new Intl.NumberFormat("es-ES", {
                     style: "currency",
-                    currency,
+                    currency: "EUR",
                     maximumFractionDigits: 2,
                   }).format(value)
                 }
@@ -247,7 +268,7 @@ export default function Revenue12MonthsCard() {
             <p className="text-xl font-semibold text-foreground dark:text-white tabular-nums mt-1">
               {new Intl.NumberFormat("es-ES", {
                 style: "currency",
-                currency,
+                currency: "EUR",
                 maximumFractionDigits: 2,
               }).format(totalRevenue)}
             </p>
