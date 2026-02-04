@@ -13,6 +13,7 @@ export function formatCurrency(value: number | null | undefined, currency = "EUR
   return new Intl.NumberFormat("es-ES", {
     style: "currency",
     currency,
+    useGrouping: true,
     maximumFractionDigits: 2,
   }).format(value);
 }
@@ -23,6 +24,7 @@ export function formatCurrency(value: number | null | undefined, currency = "EUR
 export function formatNumber(value: number | null | undefined, decimals = 2): string {
   if (value === null || value === undefined) return "-";
   return new Intl.NumberFormat("es-ES", {
+    useGrouping: true,
     maximumFractionDigits: decimals,
   }).format(value);
 }
