@@ -30,6 +30,14 @@ type FiscalSnapshot = {
   irpf_has_breakdown: boolean | null;
 };
 
+// Tipo para el split de IRPF proveedores (viene de v_dashboard_fiscal_irpf_qtd_split)
+type IrpfSplit = {
+  client_code: string;
+  irpf_payroll_qtd_due: string | number | null;
+  irpf_suppliers_qtd_due: string | number | null;
+  irpf_total_qtd_due: string | number | null;
+};
+
 // Helper para parsear valores numéricos que pueden venir como string desde Postgres
 function parseNumericValue(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined) return null;
@@ -38,7 +46,6 @@ function parseNumericValue(value: string | number | null | undefined): number | 
 }
 
 async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot | null> {
-  // Usamos v_fiscal_current_snapshot que contiene todos los datos fiscales incluyendo IRPF
   const { data, error } = await supabase
     .schema("erp_core")
     .from("v_fiscal_current_snapshot")
@@ -51,6 +58,22 @@ async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot |
   }
 
   return data as FiscalSnapshot | null;
+}
+
+// Segunda consulta para IRPF facturas/proveedores (irpf_suppliers_qtd_due)
+async function fetchIrpfSplit(clientCode: string): Promise<IrpfSplit | null> {
+  const { data, error } = await supabase
+    .schema("erp_core")
+    .from("v_dashboard_fiscal_irpf_qtd_split")
+    .select("*")
+    .eq("client_code", clientCode)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data as IrpfSplit | null;
 }
 
 function formatCurrency(value: number | null | undefined, currency = "EUR"): string {
@@ -109,6 +132,15 @@ export function TaxCalendarCard() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["fiscal-current-snapshot", clientCode],
     queryFn: () => fetchFiscalSnapshot(clientCode as string),
+    enabled: !!clientCode && !clientsLoading,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Segunda query para IRPF facturas/proveedores
+  const { data: irpfSplitData } = useQuery({
+    queryKey: ["irpf-split", clientCode],
+    queryFn: () => fetchIrpfSplit(clientCode as string),
     enabled: !!clientCode && !clientsLoading,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -193,10 +225,10 @@ export function TaxCalendarCard() {
   const isTaxRate = parseNumericValue(data.is_tax_rate);
   const isEstimatedTax = parseNumericValue(data.is_estimated_tax_ytd);
   
-  // IRPF: usar campos de v_fiscal_current_snapshot
-  const irpfPayroll = parseNumericValue(data.irpf_estimated_payroll_qtd);
-  const irpfInvoices = parseNumericValue(data.irpf_estimated_invoices_qtd);
-  const irpfTotal = parseNumericValue(data.irpf_estimated_total_qtd);
+  // IRPF: nóminas de v_fiscal_current_snapshot, facturas de v_dashboard_fiscal_irpf_qtd_split
+  const irpfPayroll = Math.abs(parseNumericValue(data.irpf_estimated_payroll_qtd) ?? 0);
+  const irpfSuppliers = Math.abs(parseNumericValue(irpfSplitData?.irpf_suppliers_qtd_due) ?? 0);
+  const irpfTotal = irpfPayroll + irpfSuppliers;
 
   // Texto de actualización solo si la fecha es válida
   const hasValidGeneratedDate = isValidDate(data.snapshot_generated_at);
@@ -241,13 +273,13 @@ export function TaxCalendarCard() {
             <div className="rounded-lg border border-border/50 p-4">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
               <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
-                {irpfPayroll !== null ? formatCurrency(Math.abs(irpfPayroll)) : formatCurrency(0)}
+                {formatCurrency(irpfPayroll)}
               </p>
             </div>
             <div className="rounded-lg border border-border/50 p-4">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
               <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
-                {irpfInvoices !== null ? formatCurrency(Math.abs(irpfInvoices)) : formatCurrency(0)}
+                {formatCurrency(irpfSuppliers)}
               </p>
             </div>
           </div>
@@ -256,7 +288,7 @@ export function TaxCalendarCard() {
           <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
             <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
             <p className="text-base font-semibold text-primary tabular-nums mt-2">
-              {irpfTotal !== null ? formatCurrency(Math.abs(irpfTotal)) : formatCurrency(0)}
+              {formatCurrency(irpfTotal)}
             </p>
           </div>
           
