@@ -193,11 +193,8 @@ export function TaxCalendarCard() {
   const hasValidVatDate = isValidDate(data?.vat_quarter_start);
   const hasValidIsDate = isValidDate(data?.is_year_start);
   
-  // IRPF: mostrar si hay datos de la vista irpf_split con total > 0
-  const hasIrpfData = irpfData && 
-    irpfData.irpf_total_qtd_due !== null && 
-    irpfData.irpf_total_qtd_due !== undefined && 
-    irpfData.irpf_total_qtd_due > 0;
+  // IRPF: mostrar siempre el bloque (con 0,00 € si no hay datos)
+  const showIrpfSection = true;
   
   // Validación de base fiscal suficiente (modo cliente no debe ver 0,00 € sin actividad real)
   const hasFiscalBasis = hasSufficientFiscalBasis(data, hasValidVatDate, hasValidIsDate);
@@ -248,7 +245,7 @@ export function TaxCalendarCard() {
         )}
 
         {/* IRPF Section - usando datos de v_dashboard_fiscal_irpf_qtd_split */}
-        {hasIrpfData && irpfData && (
+        {showIrpfSection && (
           <div className="space-y-3">
             <p className="text-xs font-medium text-muted-foreground">
               IRPF — estimación trimestre en curso
@@ -258,18 +255,18 @@ export function TaxCalendarCard() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfData.irpf_payroll_qtd_due)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfData?.irpf_payroll_qtd_due ?? 0)}</p>
               </div>
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfData.irpf_suppliers_qtd_due)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfData?.irpf_suppliers_qtd_due ?? 0)}</p>
               </div>
             </div>
             
             {/* Total after breakdown */}
             <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
-              <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(irpfData.irpf_total_qtd_due)}</p>
+              <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(irpfData?.irpf_total_qtd_due ?? 0)}</p>
             </div>
             
             <p className="text-[10px] text-muted-foreground/60">
