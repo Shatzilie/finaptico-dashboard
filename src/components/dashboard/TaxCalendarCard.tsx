@@ -32,10 +32,17 @@ type FiscalSnapshot = {
 
 type IrpfSplit = {
   client_code: string;
-  irpf_total_qtd_due: number | null;
-  irpf_payroll_qtd_due: number | null;
-  irpf_suppliers_qtd_due: number | null;
+  irpf_total_qtd_due: string | number | null;
+  irpf_payroll_qtd_due: string | number | null;
+  irpf_suppliers_qtd_due: string | number | null;
 };
+
+// Helper para parsear valores numéricos que pueden venir como string desde Postgres
+function parseNumericValue(value: string | number | null | undefined): number | null {
+  if (value === null || value === undefined) return null;
+  const parsed = typeof value === 'string' ? parseFloat(value) : value;
+  return isNaN(parsed) ? null : parsed;
+}
 
 async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot | null> {
   const { data, error } = await supabase
@@ -252,28 +259,38 @@ export function TaxCalendarCard() {
             </p>
             
             {/* Breakdown first: Nóminas + Facturas */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-border/50 p-4">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
-                  {irpfData ? formatCurrency(irpfData.irpf_payroll_qtd_due) : formatCurrency(0)}
-                </p>
-              </div>
-              <div className="rounded-lg border border-border/50 p-4">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
-                  {irpfData ? formatCurrency(irpfData.irpf_suppliers_qtd_due) : formatCurrency(0)}
-                </p>
-              </div>
-            </div>
-            
-            {/* Total after breakdown */}
-            <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
-              <p className="text-base font-semibold text-primary tabular-nums mt-2">
-                {irpfData ? formatCurrency(irpfData.irpf_total_qtd_due) : formatCurrency(0)}
-              </p>
-            </div>
+            {(() => {
+              const payrollValue = parseNumericValue(irpfData?.irpf_payroll_qtd_due);
+              const suppliersValue = parseNumericValue(irpfData?.irpf_suppliers_qtd_due);
+              const totalValue = parseNumericValue(irpfData?.irpf_total_qtd_due);
+              
+              return (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg border border-border/50 p-4">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
+                      <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
+                        {payrollValue !== null ? formatCurrency(Math.abs(payrollValue)) : formatCurrency(0)}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-border/50 p-4">
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
+                      <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
+                        {suppliersValue !== null ? formatCurrency(Math.abs(suppliersValue)) : formatCurrency(0)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Total after breakdown */}
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
+                    <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
+                    <p className="text-base font-semibold text-primary tabular-nums mt-2">
+                      {totalValue !== null ? formatCurrency(Math.abs(totalValue)) : formatCurrency(0)}
+                    </p>
+                  </div>
+                </>
+              );
+            })()}
             
             <p className="text-[10px] text-muted-foreground/60">
               Parte del saldo actual está comprometido para cubrir IRPF. Aunque esté en cuenta, no es dinero disponible.
