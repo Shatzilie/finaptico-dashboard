@@ -43,11 +43,9 @@ function formatAmount(amount: number): string {
 
 function formatDaysLabel(daysToDue: number): string {
   const absDays = Math.abs(daysToDue);
-  if (daysToDue >= 0) {
-    return daysToDue === 0 ? "Hoy" : `${absDays} días`;
-  } else {
-    return `${absDays} días de retraso`;
-  }
+  if (daysToDue === 0) return "Hoy";
+  if (daysToDue > 0) return `${absDays} días`;
+  return `-${absDays} días`;
 }
 
 const MAX_VISIBLE_ROWS = 4;
@@ -108,7 +106,7 @@ export function PendingInvoicesCard() {
           Todas las facturas emitidas están cobradas. No hay entradas pendientes en este momento.
         </p>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {/* Status message */}
           <p className="text-sm text-muted-foreground">
             {hasOverdue
@@ -116,43 +114,40 @@ export function PendingInvoicesCard() {
               : "Cobros pendientes dentro del plazo acordado."}
           </p>
 
-          {/* Table */}
-          <div className="overflow-x-auto -mx-2">
+          {/* Desktop Table - hidden on small screens */}
+          <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="font-medium">Cliente</TableHead>
-                  <TableHead className="font-medium">Factura</TableHead>
-                  <TableHead className="text-right font-medium">Importe pendiente</TableHead>
-                  <TableHead className="font-medium">Vencimiento</TableHead>
-                  <TableHead className="font-medium">Días</TableHead>
+                  <TableHead className="font-medium px-2 py-2 text-xs whitespace-nowrap">Cliente</TableHead>
+                  <TableHead className="font-medium px-2 py-2 text-xs whitespace-nowrap">Factura</TableHead>
+                  <TableHead className="font-medium px-2 py-2 text-xs text-right whitespace-nowrap">Importe</TableHead>
+                  <TableHead className="font-medium px-2 py-2 text-xs whitespace-nowrap">Vencimiento</TableHead>
+                  <TableHead className="font-medium px-2 py-2 text-xs whitespace-nowrap">Días</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {displayedInvoices.map((invoice, idx) => (
-                  <TableRow key={`${invoice.invoice_number}-${idx}`}>
-                    <TableCell className="max-w-[180px] truncate text-muted-foreground">
+                  <TableRow key={`${invoice.invoice_number}-${idx}`} className="h-11">
+                    <TableCell 
+                      className="px-2 py-2 max-w-[120px] truncate text-muted-foreground text-sm"
+                      title={invoice.customer_name}
+                    >
                       {invoice.customer_name}
                     </TableCell>
-                    <TableCell className="font-semibold whitespace-nowrap text-foreground">
+                    <TableCell className="px-2 py-2 font-medium whitespace-nowrap text-foreground text-sm">
                       {invoice.invoice_number}
                     </TableCell>
-                    <TableCell className="text-right whitespace-nowrap font-semibold text-foreground tabular-nums">
+                    <TableCell className="px-2 py-2 text-right whitespace-nowrap font-medium text-foreground tabular-nums text-sm">
                       {formatAmount(invoice.amount_pending)}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap tabular-nums text-muted-foreground">
+                    <TableCell className="px-2 py-2 whitespace-nowrap tabular-nums text-muted-foreground text-sm">
                       {formatDate(invoice.due_date)}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {invoice.due_status === "overdue" ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-muted/80 text-muted-foreground">
-                          {formatDaysLabel(invoice.days_to_due)}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground tabular-nums">
-                          {formatDaysLabel(invoice.days_to_due)}
-                        </span>
-                      )}
+                    <TableCell className="px-2 py-2 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted/60 text-muted-foreground">
+                        {formatDaysLabel(invoice.days_to_due)}
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -160,9 +155,46 @@ export function PendingInvoicesCard() {
             </Table>
           </div>
 
+          {/* Mobile Stacked Layout - visible only on small screens */}
+          <div className="md:hidden space-y-3">
+            {displayedInvoices.map((invoice, idx) => (
+              <div 
+                key={`mobile-${invoice.invoice_number}-${idx}`}
+                className="border border-border/50 rounded-lg p-3 space-y-2"
+              >
+                {/* Line 1: Cliente + Factura */}
+                <div className="flex items-center justify-between gap-2">
+                  <span 
+                    className="text-sm text-muted-foreground truncate max-w-[60%]"
+                    title={invoice.customer_name}
+                  >
+                    {invoice.customer_name}
+                  </span>
+                  <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                    {invoice.invoice_number}
+                  </span>
+                </div>
+                {/* Line 2: Importe + Vencimiento + Días */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-foreground tabular-nums">
+                    {formatAmount(invoice.amount_pending)}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {formatDate(invoice.due_date)}
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted/60 text-muted-foreground">
+                      {formatDaysLabel(invoice.days_to_due)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* More indicator */}
           {hasMore && (
-            <p className="text-xs text-muted-foreground/60 text-center pt-2">
+            <p className="text-xs text-muted-foreground/60 text-center pt-1">
               Mostrando {MAX_VISIBLE_ROWS} de {invoices.length} facturas pendientes.
             </p>
           )}
