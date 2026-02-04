@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui
 import { Skeleton } from "../ui/skeleton";
 import { Alert, AlertDescription } from "../ui/alert";
 
-type ClientOverview = {
+type FiscalSnapshot = {
   client_code: string;
   is_revenue_ytd: string | number | null;
   currency?: string;
@@ -22,10 +22,10 @@ function parseNumber(raw: unknown): number {
   return 0;
 }
 
-async function fetchClientOverview(clientCode: string): Promise<ClientOverview | null> {
+async function fetchRevenueYTD(clientCode: string): Promise<FiscalSnapshot | null> {
   const { data, error } = await supabase
     .schema("erp_core")
-    .from("v_dashboard_client_overview_current")
+    .from("v_fiscal_current_snapshot")
     .select("client_code, is_revenue_ytd, currency")
     .eq("client_code", clientCode)
     .maybeSingle();
@@ -34,7 +34,7 @@ async function fetchClientOverview(clientCode: string): Promise<ClientOverview |
     throw new Error(error.message);
   }
 
-  return data as ClientOverview | null;
+  return data as FiscalSnapshot | null;
 }
 
 export default function RevenueYTDCard() {
@@ -49,7 +49,7 @@ export default function RevenueYTDCard() {
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["revenue-ytd", clientCode],
-    queryFn: () => fetchClientOverview(clientCode as string),
+    queryFn: () => fetchRevenueYTD(clientCode as string),
     enabled: !!clientCode && !clientsLoading && !clientsError,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
