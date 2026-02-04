@@ -4,6 +4,7 @@ import { DashboardCard } from "./DashboardCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClientContext } from "@/context/ClientContext";
 import { supabase } from "@/lib/supabaseClient";
+import { formatCurrency } from "@/lib/utils";
 
 type FiscalSnapshot = {
   client_code: string;
@@ -76,14 +77,7 @@ async function fetchIrpfSplit(clientCode: string): Promise<IrpfSplit | null> {
   return data as IrpfSplit | null;
 }
 
-function formatCurrency(value: number | null | undefined, currency = "EUR"): string {
-  if (value === null || value === undefined) return "-";
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
+// formatCurrency is now imported from @/lib/utils
 
 function formatPercent(value: number | null | undefined): string {
   if (value === null || value === undefined) return "-";
