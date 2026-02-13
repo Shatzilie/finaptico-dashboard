@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useClientContext } from "../../context/ClientContext";
-import { supabase } from "../../lib/supabaseClient";
+import { fetchWidget } from "../../lib/dashboardApi";
 import { formatCurrency } from "../../lib/utils";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
@@ -21,28 +21,8 @@ type ChartPoint = {
   date: Date;
 };
 
-function parseNumber(raw: unknown): number {
-  if (typeof raw === "number" && isFinite(raw)) return raw;
-  if (typeof raw === "string") {
-    const parsed = parseFloat(raw);
-    if (isFinite(parsed)) return parsed;
-  }
-  return 0;
-}
-
 async function fetchRevenue12Months(clientCode: string): Promise<RevenueRow[]> {
-  const { data, error } = await supabase
-    .schema("erp_core")
-    .from("v_dashboard_revenue_12m")
-    .select("month,total_revenue")
-    .eq("client_code", clientCode)
-    .order("month", { ascending: true });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return (data ?? []) as RevenueRow[];
+  return fetchWidget<RevenueRow>("revenue_12m", clientCode);
 }
 
 export default function Revenue12MonthsCard() {
@@ -63,7 +43,6 @@ export default function Revenue12MonthsCard() {
     refetchOnWindowFocus: false,
   });
 
-  // Procesar datos para el gráfico
   const { series, parseError } = useMemo(() => {
     if (!data || data.length === 0) return { series: [] as ChartPoint[], parseError: null };
 
@@ -87,20 +66,10 @@ export default function Revenue12MonthsCard() {
     return { series: errorFound ? [] : points, parseError: errorFound };
   }, [data]);
 
-  // Suma total de los 12 meses
   const totalRevenue = useMemo(() => {
     return series.reduce((acc, p) => acc + (Number.isFinite(p.value) ? p.value : 0), 0);
   }, [series]);
 
-  // Validación rápida (temporal): asegurar que llegan valores > 0 y que el dataset del chart es `series`
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log("revenue12m raw", data);
-    // eslint-disable-next-line no-console
-    console.log("revenue12m series", series);
-  }, [data, series]);
-
-  // 1) Error cargando clientes
   if (clientsError) {
     return (
       <Card>
@@ -117,7 +86,6 @@ export default function Revenue12MonthsCard() {
     );
   }
 
-  // 2) Aún cargando clientes o sin cliente elegido
   if (clientsLoading || !selectedClientId || !selectedClient) {
     return (
       <Card>
@@ -133,7 +101,6 @@ export default function Revenue12MonthsCard() {
     );
   }
 
-  // 3) Error al cargar historial
   if (isError) {
     return (
       <Card>
@@ -150,7 +117,6 @@ export default function Revenue12MonthsCard() {
     );
   }
 
-  // 4) Loading inicial
   if (isLoading) {
     return (
       <Card>
@@ -166,7 +132,6 @@ export default function Revenue12MonthsCard() {
     );
   }
 
-  // 5) Error de parseo
   if (parseError) {
     return (
       <Card>
@@ -183,7 +148,6 @@ export default function Revenue12MonthsCard() {
     );
   }
 
-  // 6) Sin datos
   if (!data || data.length === 0) {
     return (
       <Card>
@@ -200,7 +164,6 @@ export default function Revenue12MonthsCard() {
     );
   }
 
-  // 7) Vista normal con gráfico
   return (
     <Card className="font-sans">
       <CardHeader>
@@ -218,12 +181,12 @@ export default function Revenue12MonthsCard() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
-              <XAxis 
-                dataKey="label" 
-                tickLine={false} 
-                axisLine={false} 
-                tickMargin={12} 
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }} 
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={12}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
               />
               <YAxis
                 tickLine={false}
@@ -234,22 +197,22 @@ export default function Revenue12MonthsCard() {
               />
               <Tooltip
                 formatter={(v) => formatCurrency(Number(v), "EUR")}
-                contentStyle={{ 
-                  backgroundColor: "hsl(var(--card))", 
+                contentStyle={{
+                  backgroundColor: "hsl(var(--card))",
                   border: "1px solid hsl(var(--border))",
                   borderRadius: "8px",
-                  color: "hsl(var(--foreground))", 
-                  fontSize: 13 
+                  color: "hsl(var(--foreground))",
+                  fontSize: 13
                 }}
                 labelStyle={{ color: "hsl(var(--muted-foreground))" }}
               />
-              <Area 
-                type="monotone" 
-                dataKey="value" 
-                stroke="hsl(var(--primary))" 
-                strokeWidth={2} 
-                fillOpacity={1} 
-                fill="url(#revenueGradient)" 
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#revenueGradient)"
               />
             </AreaChart>
           </ResponsiveContainer>

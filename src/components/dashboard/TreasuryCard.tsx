@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useClientContext, getClientDisplayName } from "../../context/ClientContext";
-import { supabase } from "../../lib/supabaseClient";
+import { fetchWidget } from "../../lib/dashboardApi";
 import { formatCurrency } from "../../lib/utils";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
@@ -17,18 +17,8 @@ type TreasurySnapshot = {
 };
 
 async function fetchTreasurySnapshot(clientCode: string): Promise<TreasurySnapshot | null> {
-  const { data, error } = await supabase
-    .schema("erp_core")
-    .from("v_dashboard_treasury_snapshot")
-    .select("client_code, snapshot_date, total_balance, currency, snapshot_generated_at")
-    .eq("client_code", clientCode)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data as TreasurySnapshot | null;
+  const rows = await fetchWidget<TreasurySnapshot>("treasury_snapshot", clientCode);
+  return rows.length > 0 ? rows[0] : null;
 }
 
 export default function TreasuryCard() {
@@ -49,15 +39,13 @@ export default function TreasuryCard() {
     return formatCurrency(balance, data.currency || "EUR");
   }, [data]);
 
-  // Textos adaptativos según modo (sentence case)
   const title = canSwitchClient ? "Tesorería" : "Tesorería hoy";
-  const description = canSwitchClient 
-    ? "Saldo total del cliente seleccionado" 
+  const description = canSwitchClient
+    ? "Saldo total del cliente seleccionado"
     : "Saldo en cuentas según información disponible";
   const amountLabel = "Saldo bancario registrado en contabilidad a la fecha indicada";
   const dateLabel = canSwitchClient ? "Fecha snapshot" : "Corresponde a movimientos contabilizados hasta";
 
-  // 1) Error cargando clientes
   if (clientsError) {
     return (
       <Card>
@@ -74,7 +62,6 @@ export default function TreasuryCard() {
     );
   }
 
-  // 2) Aún cargando clientes o sin cliente elegido
   if (clientsLoading || !selectedClientId || !selectedClient) {
     return (
       <Card>
@@ -91,7 +78,6 @@ export default function TreasuryCard() {
     );
   }
 
-  // 3) Error al cargar tesorería
   if (isError) {
     return (
       <Card>
@@ -108,7 +94,6 @@ export default function TreasuryCard() {
     );
   }
 
-  // 4) Loading inicial de tesorería
   if (isLoading) {
     return (
       <Card>
@@ -125,7 +110,6 @@ export default function TreasuryCard() {
     );
   }
 
-  // 5) Sin datos para ese cliente
   if (!data) {
     return (
       <Card>
@@ -142,7 +126,6 @@ export default function TreasuryCard() {
     );
   }
 
-  // 6) Vista normal con datos
   return (
     <Card>
       <CardHeader>
@@ -155,7 +138,6 @@ export default function TreasuryCard() {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{amountLabel}</p>
             <p className="text-4xl font-semibold tracking-tight text-foreground dark:text-white tabular-nums">{totalFormatted}</p>
           </div>
-          {/* Solo mostrar bloque empresa en modo admin */}
           {canSwitchClient && (
             <div className="text-right text-xs text-muted-foreground">
               <p>Empresa</p>
@@ -173,7 +155,6 @@ export default function TreasuryCard() {
           </span>
         </div>
 
-        {/* Nota de pie - solo modo cliente */}
         {!canSwitchClient && (
           <p className="text-[10px] text-muted-foreground/60">
             No incluye previsiones, compromisos futuros ni validación bancaria en tiempo real.

@@ -3,7 +3,7 @@ import { Calendar, AlertCircle } from "lucide-react";
 import { DashboardCard } from "./DashboardCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClientContext } from "@/context/ClientContext";
-import { supabase } from "@/lib/supabaseClient";
+import { fetchWidget } from "@/lib/dashboardApi";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 
 type FiscalSnapshot = {
@@ -21,7 +21,6 @@ type FiscalSnapshot = {
   is_tax_rate: string | number;
   is_estimated_tax_ytd: string | number;
   is_has_revenue_ytd: boolean;
-  // IRPF fields from v_fiscal_current_snapshot
   irpf_estimated_total_qtd: string | number | null;
   irpf_estimated_payroll_qtd: string | number | null;
   irpf_estimated_invoices_qtd: string | number | null;
@@ -31,7 +30,6 @@ type FiscalSnapshot = {
   irpf_has_breakdown: boolean | null;
 };
 
-// Tipo para el split de IRPF proveedores (viene de v_dashboard_fiscal_irpf_qtd_split)
 type IrpfSplit = {
   client_code: string;
   irpf_payroll_qtd_due: string | number | null;
@@ -39,7 +37,6 @@ type IrpfSplit = {
   irpf_total_qtd_due: string | number | null;
 };
 
-// Helper para parsear valores numéricos que pueden venir como string desde Postgres
 function parseNumericValue(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined) return null;
   const parsed = typeof value === 'string' ? parseFloat(value) : value;
@@ -47,37 +44,14 @@ function parseNumericValue(value: string | number | null | undefined): number | 
 }
 
 async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot | null> {
-  const { data, error } = await supabase
-    .schema("erp_core")
-    .from("v_fiscal_current_snapshot")
-    .select("*")
-    .eq("client_code", clientCode)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data as FiscalSnapshot | null;
+  const rows = await fetchWidget<FiscalSnapshot>("fiscal_snapshot", clientCode);
+  return rows.length > 0 ? rows[0] : null;
 }
 
-// Segunda consulta para IRPF facturas/proveedores (irpf_suppliers_qtd_due)
 async function fetchIrpfSplit(clientCode: string): Promise<IrpfSplit | null> {
-  const { data, error } = await supabase
-    .schema("erp_core")
-    .from("v_dashboard_fiscal_irpf_qtd_split")
-    .select("*")
-    .eq("client_code", clientCode)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data as IrpfSplit | null;
+  const rows = await fetchWidget<IrpfSplit>("fiscal_irpf_split", clientCode);
+  return rows.length > 0 ? rows[0] : null;
 }
-
-// formatCurrency is now imported from @/lib/utils
 
 function formatPercent(value: number | null | undefined): string {
   if (value === null || value === undefined) return "-";
@@ -87,35 +61,26 @@ function formatPercent(value: number | null | undefined): string {
 function isValidDate(dateStr: string | null | undefined): boolean {
   if (!dateStr) return false;
   const date = new Date(dateStr);
-  // Verificar que es una fecha válida y no es 1970 (epoch)
   return !isNaN(date.getTime()) && date.getFullYear() > 1970;
 }
 
-// Verificar si hay base fiscal suficiente (ingresos YTD > 0, fechas válidas, datos significativos)
 function hasSufficientFiscalBasis(data: FiscalSnapshot | null, hasValidVatDate: boolean, hasValidIsDate: boolean): boolean {
   if (!data) return false;
-  
-  // Si no hay fechas válidas, no hay base fiscal
   if (!hasValidVatDate && !hasValidIsDate) return false;
-  
+
   const revenueYtd = parseNumericValue(data.is_revenue_ytd);
   const vatOutput = parseNumericValue(data.vat_output_qtd);
   const vatSupported = parseNumericValue(data.vat_supported_qtd);
   const vatNet = parseNumericValue(data.vat_net_qtd);
   const isTax = parseNumericValue(data.is_estimated_tax_ytd);
-  
-  // Verificar si hay ingresos YTD (indicador de actividad fiscal real)
+
   const hasRevenueYtd = revenueYtd !== null && revenueYtd > 0;
-  
-  // Verificar si hay al menos algún valor fiscal significativo (no solo 0,00)
-  const hasVatActivity = 
+  const hasVatActivity =
     (vatOutput !== null && vatOutput !== 0) ||
     (vatSupported !== null && vatSupported !== 0) ||
     (vatNet !== null && vatNet !== 0);
-  
   const hasIsActivity = isTax !== null && isTax !== 0;
-  
-  // Hay base suficiente si hay ingresos YTD O si hay actividad fiscal real
+
   return hasRevenueYtd || hasVatActivity || hasIsActivity;
 }
 
@@ -131,7 +96,6 @@ export function TaxCalendarCard() {
     refetchOnWindowFocus: false,
   });
 
-  // Segunda query para IRPF facturas/proveedores
   const { data: irpfSplitData } = useQuery({
     queryKey: ["irpf-split", clientCode],
     queryFn: () => fetchIrpfSplit(clientCode as string),
@@ -140,46 +104,30 @@ export function TaxCalendarCard() {
     refetchOnWindowFocus: false,
   });
 
-  // Loading clientes
   if (clientsLoading) {
     return (
       <DashboardCard title="Situación Fiscal" icon={Calendar}>
-        <div className="space-y-3">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
-        </div>
+        <div className="space-y-3"><Skeleton className="h-6 w-32" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-2/3" /></div>
       </DashboardCard>
     );
   }
 
-  // Sin cliente seleccionado (no debería ocurrir en cliente final)
   if (!clientCode) {
     return (
       <DashboardCard title="Situación Fiscal" icon={Calendar}>
-        <div className="py-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Cargando datos fiscales...
-          </p>
-        </div>
+        <div className="py-8 text-center"><p className="text-sm text-muted-foreground">Cargando datos fiscales...</p></div>
       </DashboardCard>
     );
   }
 
-  // Loading datos fiscales
   if (isLoading) {
     return (
       <DashboardCard title="Situación Fiscal" icon={Calendar}>
-        <div className="space-y-3">
-          <Skeleton className="h-6 w-32" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
-        </div>
+        <div className="space-y-3"><Skeleton className="h-6 w-32" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-2/3" /></div>
       </DashboardCard>
     );
   }
 
-  // Error
   if (isError) {
     return (
       <DashboardCard title="Situación Fiscal" icon={Calendar}>
@@ -192,53 +140,37 @@ export function TaxCalendarCard() {
     );
   }
 
-  // Validación de fechas
   const hasValidVatDate = isValidDate(data?.vat_quarter_start);
   const hasValidIsDate = isValidDate(data?.is_year_start);
-  
-  // Validación de base fiscal suficiente (modo cliente no debe ver 0,00 € sin actividad real)
   const hasFiscalBasis = hasSufficientFiscalBasis(data, hasValidVatDate, hasValidIsDate);
 
-  // Sin datos o sin base fiscal válida - solo mostrar mensaje
   if (!data || !hasFiscalBasis) {
     return (
       <DashboardCard title="Situación Fiscal" icon={Calendar}>
-        <div className="py-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Datos fiscales no disponibles todavía
-          </p>
-        </div>
+        <div className="py-8 text-center"><p className="text-sm text-muted-foreground">Datos fiscales no disponibles todavía</p></div>
       </DashboardCard>
     );
   }
 
-  // Parsear valores numéricos
   const vatOutput = parseNumericValue(data.vat_output_qtd);
   const vatSupported = parseNumericValue(data.vat_supported_qtd);
   const vatNet = parseNumericValue(data.vat_net_qtd);
   const isTaxRate = parseNumericValue(data.is_tax_rate);
   const isEstimatedTax = parseNumericValue(data.is_estimated_tax_ytd);
-  
-  // IRPF: nóminas de v_fiscal_current_snapshot, facturas de v_dashboard_fiscal_irpf_qtd_split
+
   const irpfPayroll = Math.abs(parseNumericValue(data.irpf_estimated_payroll_qtd) ?? 0);
   const irpfSuppliers = Math.abs(parseNumericValue(irpfSplitData?.irpf_suppliers_qtd_due) ?? 0);
   const irpfTotal = irpfPayroll + irpfSuppliers;
 
-  // Texto de actualización solo si la fecha es válida
   const hasValidGeneratedDate = isValidDate(data.snapshot_generated_at);
 
   return (
     <DashboardCard title="Situación fiscal estimada" icon={Calendar}>
-      <p className="text-xs text-muted-foreground mb-4">
-        Referencia según información contable registrada
-      </p>
+      <p className="text-xs text-muted-foreground mb-4">Referencia según información contable registrada</p>
       <div className="space-y-6">
-        {/* IVA Section */}
         {hasValidVatDate && (
           <div className="space-y-3">
-            <p className="text-xs font-medium text-muted-foreground">
-              IVA — estimación trimestre en curso
-            </p>
+            <p className="text-xs font-medium text-muted-foreground">IVA — estimación trimestre en curso</p>
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Repercutido</p>
@@ -253,53 +185,32 @@ export function TaxCalendarCard() {
                 <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(vatNet)}</p>
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground/60">
-              Importes derivados de la facturación y gastos registrados en contabilidad.
-            </p>
+            <p className="text-[10px] text-muted-foreground/60">Importes derivados de la facturación y gastos registrados en contabilidad.</p>
           </div>
         )}
 
-        {/* IRPF Section - SIEMPRE se muestra, usando campos de v_fiscal_current_snapshot */}
         <div className="space-y-3">
-          <p className="text-xs font-medium text-muted-foreground">
-            IRPF — estimación trimestre en curso
-          </p>
-          
-          {/* Breakdown: Nóminas + Facturas */}
+          <p className="text-xs font-medium text-muted-foreground">IRPF — estimación trimestre en curso</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg border border-border/50 p-4">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
-              <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
-                {formatCurrency(irpfPayroll)}
-              </p>
+              <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfPayroll)}</p>
             </div>
             <div className="rounded-lg border border-border/50 p-4">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
-              <p className="text-sm font-semibold text-foreground tabular-nums mt-2">
-                {formatCurrency(irpfSuppliers)}
-              </p>
+              <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfSuppliers)}</p>
             </div>
           </div>
-          
-          {/* Total IRPF */}
           <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
             <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
-            <p className="text-base font-semibold text-primary tabular-nums mt-2">
-              {formatCurrency(irpfTotal)}
-            </p>
+            <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(irpfTotal)}</p>
           </div>
-          
-          <p className="text-[10px] text-muted-foreground/60">
-            La información refleja el estado actual de los datos contabilizados.
-          </p>
+          <p className="text-[10px] text-muted-foreground/60">La información refleja el estado actual de los datos contabilizados.</p>
         </div>
 
-        {/* IS Section */}
         {hasValidIsDate && (
           <div className="space-y-3">
-            <p className="text-xs font-medium text-muted-foreground">
-              Impuesto sobre sociedades — estimación anual
-            </p>
+            <p className="text-xs font-medium text-muted-foreground">Impuesto sobre sociedades — estimación anual</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Tipo</p>
@@ -310,18 +221,14 @@ export function TaxCalendarCard() {
                 <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(isEstimatedTax)}</p>
               </div>
             </div>
-            <p className="text-[10px] text-muted-foreground/60">
-              Importes derivados de la facturación y gastos registrados en contabilidad.
-            </p>
+            <p className="text-[10px] text-muted-foreground/60">Importes derivados de la facturación y gastos registrados en contabilidad.</p>
           </div>
         )}
 
-        {/* Limit note */}
         <p className="text-[10px] text-muted-foreground/60 border-t border-border/50 pt-4">
           Puede variar por ajustes, regularizaciones o cambios posteriores en contabilidad. No equivale a una liquidación oficial ni a una presentación ante la administración.
         </p>
 
-        {/* Footer */}
         {hasValidGeneratedDate && (
           <p className="text-[10px] text-muted-foreground text-right pt-4 border-t border-border/50">
             <span className="font-medium">Actualizado:</span> <span className="text-foreground tabular-nums">{new Date(data.snapshot_generated_at).toLocaleDateString("es-ES")}</span>

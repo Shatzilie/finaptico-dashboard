@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { useClientContext } from "@/context/ClientContext";
-import { supabase } from "@/lib/supabaseClient";
+import { fetchWidget } from "@/lib/dashboardApi";
 import { formatCurrency } from "@/lib/utils";
 import { FileText } from "lucide-react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 
 type PendingInvoice = {
   customer_name: string;
@@ -27,12 +21,7 @@ type PendingInvoice = {
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+  return new Date(dateStr).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
 function formatAmount(amount: number): string {
@@ -65,17 +54,7 @@ export function PendingInvoicesCard() {
       setError(null);
 
       try {
-        const { data, error: queryError } = await supabase
-          .schema("erp_core")
-          .from("v_dashboard_sales_invoices_pending")
-          .select("*")
-          .eq("client_code", selectedClient.code)
-          .order("due_date", { ascending: true });
-
-        if (queryError) {
-          throw new Error(queryError.message);
-        }
-
+        const data = await fetchWidget<PendingInvoice>("sales_invoices_pending", selectedClient.code);
         setInvoices(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error loading pending invoices:", err);
@@ -89,7 +68,6 @@ export function PendingInvoicesCard() {
     loadInvoices();
   }, [selectedClient?.code, clientLoading]);
 
-  const hasOverdue = invoices.some((inv) => inv.due_status === "overdue");
   const displayedInvoices = invoices.slice(0, MAX_VISIBLE_ROWS);
   const hasMore = invoices.length > MAX_VISIBLE_ROWS;
 
@@ -105,12 +83,11 @@ export function PendingInvoicesCard() {
         </p>
       ) : (
         <div className="space-y-4">
-          {/* Status message */}
           <p className="text-sm text-muted-foreground">
             Importes facturados pendientes de cobro según fechas de vencimiento registradas.
           </p>
 
-          {/* Desktop Table - hidden on small screens */}
+          {/* Desktop Table */}
           <div className="hidden md:block">
             <Table>
               <TableHeader>
@@ -125,10 +102,7 @@ export function PendingInvoicesCard() {
               <TableBody>
                 {displayedInvoices.map((invoice, idx) => (
                   <TableRow key={`${invoice.invoice_number}-${idx}`} className="h-11">
-                    <TableCell 
-                      className="px-2 py-2 max-w-[120px] truncate text-muted-foreground text-sm"
-                      title={invoice.customer_name}
-                    >
+                    <TableCell className="px-2 py-2 max-w-[120px] truncate text-muted-foreground text-sm" title={invoice.customer_name}>
                       {invoice.customer_name}
                     </TableCell>
                     <TableCell className="px-2 py-2 font-medium whitespace-nowrap text-foreground text-sm">
@@ -151,34 +125,24 @@ export function PendingInvoicesCard() {
             </Table>
           </div>
 
-          {/* Mobile Stacked Layout - visible only on small screens */}
+          {/* Mobile Stacked Layout */}
           <div className="md:hidden space-y-3">
             {displayedInvoices.map((invoice, idx) => (
-              <div 
-                key={`mobile-${invoice.invoice_number}-${idx}`}
-                className="border border-border/50 rounded-lg p-3 space-y-2"
-              >
-                {/* Line 1: Cliente + Factura */}
+              <div key={`mobile-${invoice.invoice_number}-${idx}`} className="border border-border/50 rounded-lg p-3 space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <span 
-                    className="text-sm text-muted-foreground truncate max-w-[60%]"
-                    title={invoice.customer_name}
-                  >
+                  <span className="text-sm text-muted-foreground truncate max-w-[60%]" title={invoice.customer_name}>
                     {invoice.customer_name}
                   </span>
                   <span className="text-sm font-medium text-foreground whitespace-nowrap">
                     {invoice.invoice_number}
                   </span>
                 </div>
-                {/* Line 2: Importe + Vencimiento + Días */}
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-medium text-foreground tabular-nums">
                     {formatAmount(invoice.amount_pending)}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {formatDate(invoice.due_date)}
-                    </span>
+                    <span className="text-xs text-muted-foreground tabular-nums">{formatDate(invoice.due_date)}</span>
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted/60 text-muted-foreground">
                       {formatDaysLabel(invoice.days_to_due)}
                     </span>
@@ -188,7 +152,6 @@ export function PendingInvoicesCard() {
             ))}
           </div>
 
-          {/* More indicator + limit note */}
           <div className="space-y-1 pt-1">
             {hasMore && (
               <p className="text-xs text-muted-foreground/60 text-center">

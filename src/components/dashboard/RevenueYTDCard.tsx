@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useClientContext } from "../../context/ClientContext";
-import { supabase } from "../../lib/supabaseClient";
+import { fetchWidget } from "../../lib/dashboardApi";
 import { formatCurrency } from "../../lib/utils";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Skeleton } from "../ui/skeleton";
@@ -23,18 +23,8 @@ function parseNumber(raw: unknown): number {
 }
 
 async function fetchRevenueYTD(clientCode: string): Promise<ClientOverview | null> {
-  const { data, error } = await supabase
-    .schema("erp_core")
-    .from("v_dashboard_client_overview_current")
-    .select("client_code, sales_ytd")
-    .eq("client_code", clientCode)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return data as ClientOverview | null;
+  const rows = await fetchWidget<ClientOverview>("client_overview", clientCode);
+  return rows.length > 0 ? rows[0] : null;
 }
 
 export default function RevenueYTDCard() {
@@ -61,9 +51,6 @@ export default function RevenueYTDCard() {
     return formatCurrency(revenue, "EUR");
   }, [data]);
 
-  const currentYear = new Date().getFullYear();
-
-  // 1) Error cargando clientes
   if (clientsError) {
     return (
       <Card>
@@ -80,7 +67,6 @@ export default function RevenueYTDCard() {
     );
   }
 
-  // 2) Aún cargando clientes o sin cliente elegido
   if (clientsLoading || !selectedClientId || !selectedClient) {
     return (
       <Card>
@@ -97,7 +83,6 @@ export default function RevenueYTDCard() {
     );
   }
 
-  // 3) Error al cargar datos
   if (isError) {
     return (
       <Card>
@@ -114,7 +99,6 @@ export default function RevenueYTDCard() {
     );
   }
 
-  // 4) Loading inicial
   if (isLoading) {
     return (
       <Card>
@@ -131,7 +115,6 @@ export default function RevenueYTDCard() {
     );
   }
 
-  // 5) Sin datos para ese cliente
   if (!data) {
     return (
       <Card>
@@ -148,7 +131,6 @@ export default function RevenueYTDCard() {
     );
   }
 
-  // 6) Vista normal con datos
   return (
     <Card>
       <CardHeader>
