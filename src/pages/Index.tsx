@@ -20,7 +20,10 @@ const SectionHeader = ({ icon: Icon, title }: { icon: React.ElementType; title: 
 );
 
 const Index = () => {
-  const { canSwitchClient } = useClientContext();
+  const { selectedClientId } = useClientContext();
+
+  // Dashboard completo cuando hay una empresa seleccionada (tanto client como admin)
+  const showFullDashboard = !!selectedClientId;
 
   return (
     <DashboardLayout title="Dashboard">
@@ -28,7 +31,7 @@ const Index = () => {
           FILA 1: CAJA — Presente + Corto plazo
           Tesorería (estrecho) | Facturas pendientes (ancho) | Evolución (medio)
       ═══════════════════════════════════════════════════════════════════════ */}
-      {!canSwitchClient && (
+      {showFullDashboard && (
         <section className="mb-10">
           <SectionHeader icon={Wallet} title="Situación de caja" />
           
@@ -55,7 +58,7 @@ const Index = () => {
           FILA 2: FACTURACIÓN — Histórico 12m + YTD
           Entre Caja y Compromisos fiscales
       ═══════════════════════════════════════════════════════════════════════ */}
-      {!canSwitchClient && (
+      {showFullDashboard && (
         <section className="mb-10">
           <SectionHeader icon={TrendingUp} title="Facturación" />
           
@@ -77,7 +80,7 @@ const Index = () => {
           FILA 3: COMPROMISOS FISCALES — Estimaciones + Histórico
           Misma altura y peso visual
       ═══════════════════════════════════════════════════════════════════════ */}
-      {!canSwitchClient && (
+      {showFullDashboard && (
         <section className="mb-10">
           <SectionHeader icon={Scale} title="Compromisos fiscales" />
           
@@ -100,30 +103,16 @@ const Index = () => {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          ADMIN: Vista alternativa
+          ACCIONES PENDIENTES
       ═══════════════════════════════════════════════════════════════════════ */}
-      {canSwitchClient && (
-        <div className="grid gap-8 lg:gap-10 md:grid-cols-2 xl:grid-cols-3">
-          <div className="md:col-span-2 xl:col-span-1">
-            <TreasuryCard />
-          </div>
-          <div>
-            <BalanceProjectionCard />
-          </div>
-          <div>
-            <TaxCalendarCard />
-          </div>
-        </div>
-      )}
-
-      {canSwitchClient && (
+      {showFullDashboard && (
         <div className="mt-8">
           <NextActionsCard />
         </div>
       )}
 
       {/* Disclaimer */}
-      {!canSwitchClient && (
+      {showFullDashboard && (
         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
           <Info className="h-3 w-3 shrink-0" />
           <span>Panel orientativo. No sustituye revisiones ni liquidaciones oficiales.</span>
