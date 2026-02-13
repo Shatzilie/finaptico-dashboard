@@ -1,14 +1,14 @@
 // src/context/ClientContext.tsx
 import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from "react";
-import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "./AuthContext";
+import { fetchWidget } from "../lib/dashboardApi";
 
 export type ErpClient = {
-  id: string | number;
-  code?: string | null;
-  name?: string | null;
-  display_name?: string | null;
+  id?: string | number;
+  code: string;
   label?: string | null;
+  display_name?: string | null;
+  name?: string | null;
   [key: string]: any;
 };
 
@@ -30,9 +30,7 @@ type ClientContextValue = {
   loading: boolean;
   error: string | null;
   setSelectedClientId: (id: string | number | null) => void;
-  /** Rol del usuario: "admin" si tiene acceso a múltiples clientes, "client" si solo tiene uno */
   userRole: UserRole;
-  /** true si el usuario puede cambiar de cliente (solo admins) */
   canSwitchClient: boolean;
 };
 
@@ -42,7 +40,6 @@ export function ClientProvider({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth();
 
   const [clients, setClients] = useState<ErpClient[]>([]);
-  const [allowedClientCodes, setAllowedClientCodes] = useState<string[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +49,6 @@ export function ClientProvider({ children }: { children: ReactNode }) {
 
     if (!user) {
       setClients([]);
-      setAllowedClientCodes([]);
       setSelectedClientId(null);
       setLoading(false);
       setError(null);
@@ -66,55 +62,32 @@ export function ClientProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       try {
-        // 1. Obtener los client_code permitidos para este usuario (via vista con RLS)
-        const { data: accessData, error: accessError } = await supabase
-          .schema("erp_core")
-          .from("v_my_clients")
-          .select("client_code");
-
-        if (accessError) {
-          throw new Error(accessError.message);
-        }
+        // Fetch clients via the dashboard Edge Function (widget: my_clients)
+        const data = await fetchWidget<{ code: string; label: string | null }>("my_clients");
 
         if (cancelled) return;
 
-        const codes = (accessData ?? []).map((row: { client_code: string }) => row.client_code);
-        setAllowedClientCodes(codes);
-
-        if (codes.length === 0) {
-          // Usuario sin acceso a ningún cliente
+        if (!data || data.length === 0) {
           setClients([]);
           setSelectedClientId(null);
           setLoading(false);
           return;
         }
 
-        // 2. Obtener los datos de los clientes permitidos
-        const { data: clientsData, error: clientsError } = await supabase
-          .schema("erp_core")
-          .from("clients")
-          .select("*")
-          .in("code", codes)
-          .order("code", { ascending: true });
+        // Map to ErpClient format (use code as id since clients table is in erp_core)
+        const list: ErpClient[] = data.map((row) => ({
+          id: row.code,
+          code: row.code,
+          label: row.label,
+        }));
 
-        if (clientsError) {
-          throw new Error(clientsError.message);
-        }
-
-        if (cancelled) return;
-
-        const list = (clientsData ?? []) as ErpClient[];
         setClients(list);
 
-        // 3. Autoseleccionar cliente
-        // Si solo hay uno (rol cliente), fijarlo automáticamente
-        // Si hay varios (rol admin), seleccionar el primero si no hay ninguno seleccionado
+        // Auto-select: single client = fix, multiple = first if none selected
         if (list.length === 1) {
-          // Usuario cliente: fijar automáticamente, no permitir cambio
-          setSelectedClientId(list[0].id);
+          setSelectedClientId(list[0].code);
         } else if (list.length > 1 && selectedClientId == null) {
-          // Usuario admin: seleccionar el primero por defecto
-          setSelectedClientId(list[0].id);
+          setSelectedClientId(list[0].code);
         }
 
         setLoading(false);
@@ -122,7 +95,6 @@ export function ClientProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setError(err instanceof Error ? err.message : "Error desconocido");
         setClients([]);
-        setAllowedClientCodes([]);
         setSelectedClientId(null);
         setLoading(false);
       }
@@ -138,25 +110,20 @@ export function ClientProvider({ children }: { children: ReactNode }) {
 
   const selectedClient = useMemo(() => {
     if (!selectedClientId) return null;
-    return clients.find((c) => String(c.id) === String(selectedClientId)) ?? null;
+    return clients.find((c) => String(c.id) === String(selectedClientId) || c.code === String(selectedClientId)) ?? null;
   }, [clients, selectedClientId]);
 
-  // Determinar rol basado en número de clientes permitidos
   const userRole: UserRole = useMemo(() => {
     if (loading || !user) return null;
-    if (allowedClientCodes.length > 1) return "admin";
-    if (allowedClientCodes.length === 1) return "client";
+    if (clients.length > 1) return "admin";
+    if (clients.length === 1) return "client";
     return null;
-  }, [allowedClientCodes.length, loading, user]);
+  }, [clients.length, loading, user]);
 
   const canSwitchClient = userRole === "admin";
 
-  // Wrapper para setSelectedClientId que solo permite cambio si es admin
   const handleSetSelectedClientId = (id: string | number | null) => {
-    if (!canSwitchClient) {
-      // Usuario cliente: ignorar intentos de cambiar cliente
-      return;
-    }
+    if (!canSwitchClient) return;
     setSelectedClientId(id);
   };
 
