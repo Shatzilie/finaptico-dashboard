@@ -1,1 +1,34 @@
 project_id = "utwhvnafvtardndgkbjn"
+
+[functions.client-list]
+verify_jwt = false
+
+[functions.dashboard-treasury-snapshot]
+verify_jwt = false
+
+[functions.dashboard-pending-invoices]
+verify_jwt = false
+
+[functions.dashboard-revenue]
+verify_jwt = false
+
+[functions.dashboard-balance-projection]
+verify_jwt = false
+
+[functions.dashboard-fiscal-snapshot]
+verify_jwt = false
+
+[functions.client-tax-payments-list]
+verify_jwt = false
+
+[functions.client-actions-feed]
+verify_jwt = false
+
+[functions.admin-tax-filings-list]
+verify_jwt = false
+
+[functions.admin-tax-filing-upsert]
+verify_jwt = false
+
+[functions.admin-tax-filing-delete]
+verify_jwt = false

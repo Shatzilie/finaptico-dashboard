@@ -90,6 +90,7 @@ export type Database = {
         Row: {
           amount: number
           client_code: string
+          company_id: string
           created_at: string
           currency: string
           id: string
@@ -107,6 +108,7 @@ export type Database = {
         Insert: {
           amount?: number
           client_code: string
+          company_id: string
           created_at?: string
           currency?: string
           id?: string
@@ -124,6 +126,7 @@ export type Database = {
         Update: {
           amount?: number
           client_code?: string
+          company_id?: string
           created_at?: string
           currency?: string
           id?: string
