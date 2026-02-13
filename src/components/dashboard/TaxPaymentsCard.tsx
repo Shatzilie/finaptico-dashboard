@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { useClientContext } from "@/context/ClientContext";
-import { supabase } from "@/lib/supabaseClient";
+import { fetchWidget } from "@/lib/dashboardApi";
 import { formatCurrency } from "@/lib/utils";
 import { Receipt } from "lucide-react";
 import {
@@ -73,16 +73,10 @@ export function TaxPaymentsCard() {
       setError(null);
 
       try {
-        const { data, error: fnError } = await supabase.functions.invoke(
-          "client-tax-payments-list",
-          {
-            body: { client_code: selectedClient.code },
-          }
+        const data = await fetchWidget<TaxPayment>(
+          "tax_payments_settled",
+          selectedClient.code
         );
-
-        if (fnError) {
-          throw new Error(fnError.message);
-        }
 
         setTaxPayments(Array.isArray(data) ? data : []);
       } catch (err) {
