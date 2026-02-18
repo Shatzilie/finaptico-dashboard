@@ -29,6 +29,13 @@ type FiscalSnapshot = {
   irpf_quarter_end: string | null;
   irpf_has_breakdown: boolean | null;
   entity_type: string | null;
+  m130_revenue_ytd: string | number | null;
+  m130_expenses_ytd: string | number | null;
+  m130_profit_ytd: string | number | null;
+  m130_gross_tax_ytd: string | number | null;
+  m130_prior_payments_ytd: string | number | null;
+  m130_withholdings_ytd: string | number | null;
+  m130_estimated_payment: string | number | null;
 };
 
 function parseNumericValue(value: string | number | null | undefined): number | null {
@@ -71,6 +78,13 @@ function hasSufficientFiscalBasis(data: FiscalSnapshot | null, hasValidVatDate: 
   const hasIsActivity = isTax !== null && isTax !== 0;
 
   return hasRevenueYtd || hasVatActivity || hasIsActivity;
+}
+
+function getQuarterLabel(dateStr: string | null | undefined): string {
+  if (!dateStr) return "trimestre en curso";
+  const d = new Date(dateStr);
+  const q = Math.ceil((d.getMonth() + 1) / 3);
+  return `Q${q} ${d.getFullYear()}`;
 }
 
 export function TaxCalendarCard() {
@@ -133,16 +147,29 @@ export function TaxCalendarCard() {
     );
   }
 
+  const isAutonoma = data.entity_type === 'autonoma';
+
   const vatOutput = parseNumericValue(data.vat_output_qtd);
   const vatSupported = parseNumericValue(data.vat_supported_qtd);
   const vatNet = parseNumericValue(data.vat_net_qtd);
   const isTaxRate = parseNumericValue(data.is_tax_rate);
   const isEstimatedTax = parseNumericValue(data.is_estimated_tax_ytd);
 
-  // IRPF: usar directamente los valores del fiscal_snapshot
+  // IRPF for SL entities
   const irpfPayroll = Math.abs(parseNumericValue(data.irpf_estimated_payroll_qtd) ?? 0);
   const irpfInvoices = Math.abs(parseNumericValue(data.irpf_estimated_invoices_qtd) ?? 0);
   const irpfTotal = irpfPayroll + irpfInvoices;
+
+  // Modelo 130 for autónomas
+  const m130Revenue = parseNumericValue(data.m130_revenue_ytd);
+  const m130Expenses = parseNumericValue(data.m130_expenses_ytd);
+  const m130Profit = parseNumericValue(data.m130_profit_ytd);
+  const m130GrossTax = parseNumericValue(data.m130_gross_tax_ytd);
+  const m130PriorPayments = parseNumericValue(data.m130_prior_payments_ytd);
+  const m130Withholdings = parseNumericValue(data.m130_withholdings_ytd);
+  const m130EstimatedPayment = parseNumericValue(data.m130_estimated_payment);
+
+  const quarterLabel = getQuarterLabel(data.vat_quarter_start);
 
   const hasValidGeneratedDate = isValidDate(data.snapshot_generated_at);
 
@@ -150,6 +177,7 @@ export function TaxCalendarCard() {
     <DashboardCard title="Situación fiscal estimada" icon={Calendar}>
       <p className="text-xs text-muted-foreground mb-4">Referencia según información contable registrada</p>
       <div className="space-y-6">
+        {/* === IVA (todos los entity_types españoles) === */}
         {hasValidVatDate && (
           <div className="space-y-3">
             <p className="text-xs font-medium text-muted-foreground">IVA — estimación trimestre en curso</p>
@@ -171,26 +199,73 @@ export function TaxCalendarCard() {
           </div>
         )}
 
-        <div className="space-y-3">
-          <p className="text-xs font-medium text-muted-foreground">IRPF — estimación trimestre en curso</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-border/50 p-4">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
-              <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfPayroll)}</p>
+        {/* === MODELO 130 (solo autónomas) === */}
+        {isAutonoma && m130Revenue !== null && (
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">Modelo 130 — pago fraccionado IRPF ({quarterLabel})</p>
+            
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg border border-border/50 p-4">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Ingresos acum.</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(m130Revenue)}</p>
+              </div>
+              <div className="rounded-lg border border-border/50 p-4">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Gastos acum.</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(m130Expenses)}</p>
+              </div>
+              <div className="rounded-lg border border-border/50 p-4">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Beneficio</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(m130Profit)}</p>
+              </div>
             </div>
-            <div className="rounded-lg border border-border/50 p-4">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
-              <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfInvoices)}</p>
-            </div>
-          </div>
-          <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
-            <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(irpfTotal)}</p>
-          </div>
-          <p className="text-[10px] text-muted-foreground/60">La información refleja el estado actual de los datos contabilizados.</p>
-        </div>
 
-        {hasValidIsDate && data.entity_type !== 'autonoma' && (
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg border border-border/50 p-4">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">20% beneficio</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(m130GrossTax)}</p>
+              </div>
+              <div className="rounded-lg border border-border/50 p-4">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Retenciones</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">-{formatCurrency(m130Withholdings)}</p>
+              </div>
+              <div className="rounded-lg border border-border/50 p-4">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">130 anteriores</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">-{formatCurrency(m130PriorPayments)}</p>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Pago estimado Modelo 130</p>
+              <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(m130EstimatedPayment)}</p>
+            </div>
+            <p className="text-[10px] text-muted-foreground/60">Cálculo acumulado desde enero. Ingresos y gastos sin IVA (base imponible). Retenciones = IRPF retenido por clientes en facturas emitidas.</p>
+          </div>
+        )}
+
+        {/* === IRPF para SLs (modelo 111) === */}
+        {!isAutonoma && (
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">IRPF — estimación trimestre en curso</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-lg border border-border/50 p-4">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF nóminas</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfPayroll)}</p>
+              </div>
+              <div className="rounded-lg border border-border/50 p-4">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfInvoices)}</p>
+              </div>
+            </div>
+            <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total IRPF</p>
+              <p className="text-base font-semibold text-primary tabular-nums mt-2">{formatCurrency(irpfTotal)}</p>
+            </div>
+            <p className="text-[10px] text-muted-foreground/60">La información refleja el estado actual de los datos contabilizados.</p>
+          </div>
+        )}
+
+        {/* === IS (solo SLs) === */}
+        {hasValidIsDate && !isAutonoma && (
           <div className="space-y-3">
             <p className="text-xs font-medium text-muted-foreground">Impuesto sobre sociedades — estimación anual</p>
             <div className="grid grid-cols-2 gap-3">
