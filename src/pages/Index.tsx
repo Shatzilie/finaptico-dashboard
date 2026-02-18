@@ -1,4 +1,4 @@
-import { Info, Wallet, Scale, TrendingUp, ClipboardList } from "lucide-react";
+import { Info, Wallet, Scale, TrendingUp } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import TreasuryCard from "@/components/dashboard/TreasuryCard";
 import BalanceProjectionCard from "@/components/dashboard/BalanceProjectionCard";
@@ -31,7 +31,6 @@ const Index = () => {
       ═══════════════════════════════════════════════════════════════════════ */}
       {showFullDashboard && (
         <section className="mb-10">
-          <SectionHeader icon={ClipboardList} title="Panel de gestiones" />
           <ControlTasksCard />
         </section>
       )}
