@@ -28,6 +28,7 @@ type FiscalSnapshot = {
   irpf_quarter_start: string | null;
   irpf_quarter_end: string | null;
   irpf_has_breakdown: boolean | null;
+  entity_type: string | null;
 };
 
 function parseNumericValue(value: string | number | null | undefined): number | null {
@@ -189,7 +190,7 @@ export function TaxCalendarCard() {
           <p className="text-[10px] text-muted-foreground/60">La información refleja el estado actual de los datos contabilizados.</p>
         </div>
 
-        {hasValidIsDate && (
+        {hasValidIsDate && data.entity_type !== 'autonoma' && (
           <div className="space-y-3">
             <p className="text-xs font-medium text-muted-foreground">Impuesto sobre sociedades — estimación anual</p>
             <div className="grid grid-cols-2 gap-3">
