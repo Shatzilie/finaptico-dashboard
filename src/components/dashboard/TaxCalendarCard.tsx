@@ -155,10 +155,12 @@ export function TaxCalendarCard() {
   const isTaxRate = parseNumericValue(data.is_tax_rate);
   const isEstimatedTax = parseNumericValue(data.is_estimated_tax_ytd);
 
-  // IRPF for SL entities
+  // IRPF for SL entities (Modelo 111)
   const irpfPayroll = Math.abs(parseNumericValue(data.irpf_estimated_payroll_qtd) ?? 0);
   const irpfInvoices = Math.abs(parseNumericValue(data.irpf_estimated_invoices_qtd) ?? 0);
-  const irpfTotal = irpfPayroll + irpfInvoices;
+  const irpfPurchases = Math.abs(parseNumericValue(data.irpf_estimated_purchases_qtd) ?? 0);
+  const irpfFacturas = irpfInvoices + irpfPurchases;
+  const irpfTotal = irpfPayroll + irpfFacturas;
 
   // Modelo 130 for autónomas
   const m130Revenue = parseNumericValue(data.m130_revenue_ytd);
@@ -253,7 +255,7 @@ export function TaxCalendarCard() {
               </div>
               <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">IRPF facturas</p>
-                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfInvoices)}</p>
+                <p className="text-sm font-semibold text-foreground tabular-nums mt-2">{formatCurrency(irpfFacturas)}</p>
               </div>
             </div>
             <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
