@@ -189,6 +189,7 @@ export default function AdminControlTasks() {
   // Form
   const [formData, setFormData] = useState<FormData>(emptyForm);
   const [isEditing, setIsEditing] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
 
   // Filter
   const [filterClient, setFilterClient] = useState<string>("ALL");
@@ -294,6 +295,7 @@ export default function AdminControlTasks() {
       client_code: filterClient !== "ALL" ? filterClient : "CLIENT_001",
     });
     setIsEditing(false);
+    setFormOpen(true);
   };
 
   const handleEdit = (task: ControlTask) => {
@@ -317,6 +319,7 @@ export default function AdminControlTasks() {
       recurrence_pattern: task.recurrence_pattern || "",
     });
     setIsEditing(true);
+    setFormOpen(true);
   };
 
   const handleDuplicate = (task: ControlTask) => {
@@ -338,6 +341,7 @@ export default function AdminControlTasks() {
       recurrence_pattern: task.recurrence_pattern || "",
     });
     setIsEditing(false);
+    setFormOpen(true);
     toast({
       title: "Tarea duplicada",
       description: "Cambia el cliente u otros campos y pulsa Guardar.",
@@ -447,7 +451,9 @@ export default function AdminControlTasks() {
         const task = data.data as ControlTask;
         handleEdit(task);
       } else {
-        handleNewTask();
+        setFormOpen(false);
+        setFormData(emptyForm);
+        setIsEditing(false);
       }
     } catch (err) {
       console.error("Error saving task:", err);
@@ -557,7 +563,8 @@ export default function AdminControlTasks() {
           )}
         </div>
 
-        {/* Formulario */}
+        {/* Formulario (colapsable) */}
+        {formOpen && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
@@ -797,14 +804,20 @@ export default function AdminControlTasks() {
                 {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Guardar
               </Button>
-              {isEditing && (
-                <Button variant="outline" onClick={handleNewTask}>
-                  Cancelar
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFormOpen(false);
+                  setFormData(emptyForm);
+                  setIsEditing(false);
+                }}
+              >
+                Cancelar
+              </Button>
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Listado */}
         <Card>
