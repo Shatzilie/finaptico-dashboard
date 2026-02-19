@@ -635,7 +635,7 @@ export default function AdminControlTasks() {
 
               {/* micro_summary */}
               <div className="space-y-2 lg:col-span-2">
-                <Label>Resumen corto (visible al cliente si aplica)</Label>
+                <Label>Resumen para el cliente (si es visible)</Label>
                 <Input
                   value={formData.micro_summary}
                   onChange={(e) =>
@@ -643,11 +643,22 @@ export default function AdminControlTasks() {
                   }
                   placeholder="Resumen que verá el cliente en vista completa"
                 />
+                <p className="text-[11px] text-muted-foreground">
+                  El resumen debe explicar el objetivo o impacto, no la tarea administrativa.
+                </p>
               </div>
 
               {/* estimated_impact */}
               <div className="space-y-2">
-                <Label>Impacto estimado</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label>Impacto estimado</Label>
+                  <span
+                    title="Opcional. Úsalo cuando la tarea tenga impacto económico relevante."
+                    className="inline-flex items-center justify-center h-4 w-4 rounded-full bg-muted text-muted-foreground text-[10px] cursor-help"
+                  >
+                    ?
+                  </span>
+                </div>
                 <Input
                   value={formData.estimated_impact}
                   onChange={(e) =>
