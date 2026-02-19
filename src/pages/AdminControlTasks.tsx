@@ -31,6 +31,7 @@ import {
   ShieldAlert,
   Trash2,
   Filter,
+  Copy,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -314,6 +315,31 @@ export default function AdminControlTasks() {
       recurrence_pattern: task.recurrence_pattern || "",
     });
     setIsEditing(true);
+  };
+
+  const handleDuplicate = (task: ControlTask) => {
+    setFormData({
+      id: "",
+      client_code: task.client_code,
+      title: task.title,
+      area: task.area,
+      status: "en_analisis",
+      impact_tag: task.impact_tag,
+      micro_summary: task.micro_summary || "",
+      estimated_impact: task.estimated_impact || "",
+      waiting_on: task.waiting_on || "",
+      visibility: task.visibility,
+      priority: task.priority,
+      internal_notes: task.internal_notes || "",
+      next_followup_date: "",
+      is_recurring: task.is_recurring,
+      recurrence_pattern: task.recurrence_pattern || "",
+    });
+    setIsEditing(false);
+    toast({
+      title: "Tarea duplicada",
+      description: "Cambia el cliente u otros campos y pulsa Guardar.",
+    });
   };
 
   const handleDeleteClick = (task: ControlTask) => {
@@ -828,6 +854,14 @@ export default function AdminControlTasks() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDuplicate(task)}
+                              title="Duplicar tarea"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
