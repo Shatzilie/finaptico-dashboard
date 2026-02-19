@@ -50,6 +50,17 @@ const IMPACT_COLORS: Record<ImpactTag, string> = {
   operativo: "bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-400",
 };
 
+// --- Helper ---
+
+function formatDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
+
 // --- Component ---
 
 export function ControlTasksCard() {
@@ -168,6 +179,11 @@ export function ControlTasksCard() {
         </div>
       ) : (
         <>
+          {/* Intro line */}
+          <p className="text-sm text-muted-foreground mb-4">
+            Estas son las gestiones que estoy supervisando actualmente para tu empresa.
+          </p>
+
           {/* Summary line */}
           <p className="text-xs text-muted-foreground mb-4">
             {totalActive} {totalActive === 1 ? "gestión activa" : "gestiones activas"}
@@ -196,7 +212,7 @@ export function ControlTasksCard() {
                   <div className="space-y-2">
                     {colTasks.length === 0 ? (
                       <div className="rounded-lg border border-dashed border-border/50 py-4 text-center">
-                        <p className="text-[10px] text-muted-foreground/50">Sin gestiones</p>
+                        <p className="text-[10px] text-muted-foreground/50">Nada pendiente en esta área</p>
                       </div>
                     ) : (
                       colTasks.map((task) => (
@@ -235,6 +251,13 @@ function TaskCard({ task, statusColor }: { task: ControlTask; statusColor: strin
       {task.waiting_on && task.status === "pendiente_tercero" && (
         <p className="text-[10px] text-orange-600 dark:text-orange-400">
           Esperando: {task.waiting_on}
+        </p>
+      )}
+
+      {/* Supervised date */}
+      {task.status === "supervisado" && task.completed_at && (
+        <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+          Supervisado el {formatDate(task.completed_at)}
         </p>
       )}
 
