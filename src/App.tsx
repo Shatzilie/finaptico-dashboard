@@ -13,10 +13,9 @@ import Calendario from "./pages/Calendario";
 import Configuracion from "./pages/Configuracion";
 import Ayuda from "./pages/Ayuda";
 import AdminTaxFilings from "./pages/AdminTaxFilings";
+import AdminControlTasks from "./pages/AdminControlTasks";
 import NotFound from "./pages/NotFound";
-
 const queryClient = new QueryClient();
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -37,6 +36,7 @@ const App = () => (
                 <Route path="/configuracion" element={<Configuracion />} />
                 <Route path="/ayuda" element={<Ayuda />} />
                 <Route path="/admin/tax-filings" element={<AdminTaxFilings />} />
+                <Route path="/admin/control-tasks" element={<AdminControlTasks />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </RequireAuth>
@@ -46,5 +46,4 @@ const App = () => (
     </TooltipProvider>
   </QueryClientProvider>
 );
-
 export default App;
