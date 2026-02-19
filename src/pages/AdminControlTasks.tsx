@@ -192,6 +192,8 @@ export default function AdminControlTasks() {
 
   // Filter
   const [filterClient, setFilterClient] = useState<string>("ALL");
+  const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [filterArea, setFilterArea] = useState<string>("ALL");
 
   // Delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -473,6 +475,14 @@ export default function AdminControlTasks() {
   const getVisibilityLabel = (v: Visibility) =>
     visibilityOptions.find((o) => o.value === v)?.label ?? v;
 
+  // --- Filtered tasks ---
+
+  const filteredTasks = tasks.filter((task) => {
+    if (filterStatus !== "ALL" && task.status !== filterStatus) return false;
+    if (filterArea !== "ALL" && task.area !== filterArea) return false;
+    return true;
+  });
+
   // --- Render ---
 
   return (
@@ -483,29 +493,68 @@ export default function AdminControlTasks() {
           <h1 className="text-2xl font-bold text-foreground">
             Admin · Gestiones Kanban
           </h1>
-          <div className="flex items-center gap-2">
-            {/* Filtro por cliente */}
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select value={filterClient} onValueChange={setFilterClient}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filtrar cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Todos los clientes</SelectItem>
-                  {clientOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={handleNewTask} variant="outline" size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva tarea
+          <Button onClick={handleNewTask} variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva tarea
+          </Button>
+        </div>
+
+        {/* Filtros */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Select value={filterClient} onValueChange={setFilterClient}>
+            <SelectTrigger className="w-[170px]">
+              <SelectValue placeholder="Cliente" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todos los clientes</SelectItem>
+              {clientOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-[170px]">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todos los estados</SelectItem>
+              {statusOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterArea} onValueChange={setFilterArea}>
+            <SelectTrigger className="w-[170px]">
+              <SelectValue placeholder="Área" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todas las áreas</SelectItem>
+              {areaOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(filterClient !== "ALL" || filterStatus !== "ALL" || filterArea !== "ALL") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFilterClient("ALL");
+                setFilterStatus("ALL");
+                setFilterArea("ALL");
+              }}
+              className="text-xs text-muted-foreground"
+            >
+              Limpiar filtros
             </Button>
-          </div>
+          )}
         </div>
 
         {/* Formulario */}
@@ -762,11 +811,9 @@ export default function AdminControlTasks() {
           <CardHeader>
             <CardTitle className="text-lg">
               Tareas{" "}
-              {filterClient !== "ALL" && (
-                <span className="text-muted-foreground font-normal">
-                  — {getClientLabel(filterClient)}
-                </span>
-              )}
+              <span className="text-muted-foreground font-normal text-sm">
+                ({filteredTasks.length} de {tasks.length})
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -774,9 +821,11 @@ export default function AdminControlTasks() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : tasks.length === 0 ? (
+            ) : filteredTasks.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
-                No hay tareas registradas.
+                {tasks.length === 0
+                  ? "No hay tareas registradas."
+                  : "Ninguna tarea coincide con los filtros seleccionados."}
               </p>
             ) : (
               <div className="overflow-x-auto">
@@ -794,7 +843,7 @@ export default function AdminControlTasks() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tasks.map((task) => (
+                    {filteredTasks.map((task) => (
                       <TableRow key={task.id}>
                         <TableCell className="font-medium text-xs">
                           {getClientLabel(task.client_code)}
