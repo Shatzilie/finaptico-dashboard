@@ -55,6 +55,32 @@ function parseNumber(raw: unknown): number {
   return 0;
 }
 
+/**
+ * Compact formatter for Y axis ticks.
+ * - Under 10k: "1.762 €" (no decimals, dot as thousands separator)
+ * - 10k+: "12,5k €"
+ * - 1M+: "1,2M €"
+ */
+function formatAxisTick(value: number, currency: string): string {
+  const symbol = currency === "EUR" ? "€" : currency === "USD" ? "$" : currency;
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+
+  if (abs >= 1_000_000) {
+    const m = abs / 1_000_000;
+    const formatted = m % 1 === 0 ? m.toFixed(0) : m.toFixed(1).replace(".", ",");
+    return `${sign}${formatted}M ${symbol}`;
+  }
+  if (abs >= 10_000) {
+    const k = abs / 1_000;
+    const formatted = k % 1 === 0 ? k.toFixed(0) : k.toFixed(1).replace(".", ",");
+    return `${sign}${formatted}k ${symbol}`;
+  }
+  // Under 10k: show full number without decimals
+  const formatted = Math.round(abs).toLocaleString("es-ES");
+  return `${sign}${formatted} ${symbol}`;
+}
+
 export default function BalanceProjectionCard() {
   const {
     selectedClientId,
@@ -167,9 +193,14 @@ export default function BalanceProjectionCard() {
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.4} />
               <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={12}
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }} />
-              <YAxis tickLine={false} axisLine={false} tickMargin={10}
-                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11, fontWeight: 500 }}
-                tickFormatter={(value: number) => formatCurrency(value, currency)} />
+              <YAxis
+                width={80}
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10, fontWeight: 500 }}
+                tickFormatter={(value: number) => formatAxisTick(value, currency)}
+              />
               <Tooltip formatter={(value: number) => formatCurrency(value, currency)}
                 contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", color: "hsl(var(--foreground))", fontSize: 13 }}
                 labelStyle={{ color: "hsl(var(--muted-foreground))" }} />
