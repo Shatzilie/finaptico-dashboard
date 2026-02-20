@@ -85,7 +85,7 @@ async function handleList(pg: PgClient, auth: AuthContext, clientCode: string) {
         SELECT *
         FROM erp_core.control_tasks
         WHERE client_code = $1
-          AND (completed_at IS NULL OR completed_at > now() - interval '14 days')
+          AND (completed_at IS NULL OR completed_at > now() - interval '7 days')
         ORDER BY
           CASE status
             WHEN 'en_ejecucion' THEN 1
@@ -109,7 +109,7 @@ async function handleList(pg: PgClient, auth: AuthContext, clientCode: string) {
       FROM erp_core.control_tasks
       WHERE client_code = $1
         AND visibility != 'interna'
-        AND (completed_at IS NULL OR completed_at > now() - interval '14 days')
+        AND (completed_at IS NULL OR completed_at > now() - interval '7 days')
       ORDER BY
         CASE status
           WHEN 'en_ejecucion' THEN 1
@@ -172,7 +172,7 @@ async function handleHistory(pg: PgClient, auth: AuthContext, clientCode: string
       WHERE client_code = $1
         AND status = 'supervisado'
         AND completed_at IS NOT NULL
-        AND completed_at <= now() - interval '14 days'
+        AND completed_at <= now() - interval '7 days'
         ${visibilityFilter}
       ORDER BY completed_at DESC
       LIMIT 50
