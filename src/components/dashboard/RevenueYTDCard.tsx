@@ -120,7 +120,7 @@ export default function RevenueYTDCard() {
       <Card>
         <CardHeader>
           <CardTitle>Facturación año en curso</CardTitle>
-          <CardDescription>Ingresos acumulados desde el 1 de enero</CardDescription>
+          <CardDescription>Lo facturado desde el 1 de enero</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
@@ -135,7 +135,7 @@ export default function RevenueYTDCard() {
     <Card>
       <CardHeader>
         <CardTitle>Facturación año en curso</CardTitle>
-        <CardDescription>Ingresos acumulados desde el 1 de enero</CardDescription>
+        <CardDescription>Lo facturado desde el 1 de enero</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
