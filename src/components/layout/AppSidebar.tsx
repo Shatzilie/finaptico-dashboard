@@ -10,6 +10,7 @@ import {
   ChevronRight,
   FileText,
   ClipboardList,
+  Archive,
   X
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -27,6 +28,7 @@ const mainNavItems = [
   { title: "Calendario Fiscal", url: "/calendario", icon: Calendar, clientVisible: false },
   { title: "Tax Filings", url: "/admin/tax-filings", icon: FileText, clientVisible: false },
   { title: "Gestiones", url: "/admin/control-tasks", icon: ClipboardList, clientVisible: false },
+  { title: "Historial de Gestiones", url: "/historial-gestiones", icon: Archive, clientVisible: false },
 ];
 
 const secondaryNavItems = [
