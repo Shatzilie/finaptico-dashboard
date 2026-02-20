@@ -205,7 +205,7 @@ export function TaxCalendarCard() {
             }`}>
               <p className="text-xs text-muted-foreground">
                 {vatIsRefund
-                  ? 'IVA a compensar en próximos trimestres'
+                  ? 'IVA a compensar en trimestres futuros'
                   : 'IVA a ingresar este trimestre'}
               </p>
               <p className={`text-xl font-semibold tabular-nums mt-1 ${
@@ -237,7 +237,7 @@ export function TaxCalendarCard() {
             </div>
 
             <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
-              <p className="text-xs text-muted-foreground">Pago estimado a Hacienda este trimestre</p>
+              <p className="text-xs text-muted-foreground">Pago fraccionado estimado este trimestre</p>
               <p className="text-xl font-semibold text-primary tabular-nums mt-1">{formatCurrency(m130EstimatedPayment)}</p>
             </div>
 
@@ -270,8 +270,6 @@ export function TaxCalendarCard() {
                 <p className="text-sm font-semibold text-foreground tabular-nums mt-1">-{formatCurrency(m130PriorPayments)}</p>
               </div>
             </div>
-
-            <p className="text-[10px] text-muted-foreground/60">Cálculo acumulado desde enero. Ingresos y gastos sin IVA. Retenciones = IRPF retenido por clientes en tus facturas.</p>
           </div>
         )}
 
@@ -284,7 +282,7 @@ export function TaxCalendarCard() {
             </div>
 
             <div className="rounded-lg border border-primary/20 bg-primary/5 dark:bg-primary/10 p-4">
-              <p className="text-xs text-muted-foreground">A ingresar en Hacienda en retenciones de IRPF</p>
+              <p className="text-xs text-muted-foreground">Retenciones IRPF a ingresar</p>
               <p className="text-xl font-semibold text-primary tabular-nums mt-1">{formatCurrency(irpfTotal)}</p>
             </div>
 
@@ -319,8 +317,8 @@ export function TaxCalendarCard() {
             }`}>
               <p className="text-xs text-muted-foreground">
                 {isProfitable
-                  ? `IS estimado a final de año (${formatPercent(isTaxRate)} sobre beneficio)`
-                  : 'La empresa tiene pérdidas. No se espera pago de IS este ejercicio'}
+                  ? 'Impuesto de Sociedades estimado a cierre de ejercicio'
+                  : 'La empresa registra pérdidas. No se estima pago de IS este ejercicio'}
               </p>
               <p className={`text-xl font-semibold tabular-nums mt-1 ${
                 isProfitable ? 'text-primary' : 'text-emerald-400'
