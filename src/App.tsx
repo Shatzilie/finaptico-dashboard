@@ -14,6 +14,7 @@ import Configuracion from "./pages/Configuracion";
 import Ayuda from "./pages/Ayuda";
 import AdminTaxFilings from "./pages/AdminTaxFilings";
 import AdminControlTasks from "./pages/AdminControlTasks";
+import ControlTasksHistory from "./pages/ControlTasksHistory";
 import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 const App = () => (
@@ -37,6 +38,7 @@ const App = () => (
                 <Route path="/ayuda" element={<Ayuda />} />
                 <Route path="/admin/tax-filings" element={<AdminTaxFilings />} />
                 <Route path="/admin/control-tasks" element={<AdminControlTasks />} />
+                <Route path="/historial-gestiones" element={<ControlTasksHistory />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </RequireAuth>
