@@ -84,7 +84,7 @@ export function PendingInvoicesCard() {
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Importes facturados pendientes de cobro según fechas de vencimiento registradas.
+            Facturas emitidas que aún no se han cobrado.
           </p>
 
           {/* Desktop Table */}
@@ -158,9 +158,6 @@ export function PendingInvoicesCard() {
                 Mostrando {MAX_VISIBLE_ROWS} de {invoices.length} facturas pendientes.
               </p>
             )}
-            <p className="text-[10px] text-muted-foreground/60 text-center">
-              La clasificación se basa únicamente en la fecha de vencimiento. No evalúa probabilidad de cobro ni riesgo asociado.
-            </p>
           </div>
         </div>
       )}
