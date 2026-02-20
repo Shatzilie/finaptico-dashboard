@@ -105,9 +105,10 @@ const Index = () => {
           <Info className="h-3 w-3 shrink-0 mt-0.5" />
           <span>
             Panel de control operativo. Finaptico supervisa y concilia tu información contable
-            para asegurar la concordancia con la gestoría oficial. Las cifras fiscales son
-            estimaciones basadas en la contabilidad registrada. La presentación y cierre legal
-            de los modelos fiscales corresponde a la gestoría externa conforme a la normativa vigente.
+            para asegurar la concordancia con la gestoría oficial. Las cifras son estimaciones
+            basadas en la contabilidad registrada, no representan validación bancaria en tiempo real.
+            La presentación y cierre legal de los modelos fiscales corresponde a la gestoría externa
+            conforme a la normativa vigente.
           </span>
         </div>
       )}
