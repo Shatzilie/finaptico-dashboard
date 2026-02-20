@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useClientContext } from "@/context/ClientContext";
+import { useNavigate } from "react-router-dom";
 
 // --- Types ---
 
@@ -65,6 +66,7 @@ function formatDate(dateStr: string): string {
 
 export function ControlTasksCard() {
   const { selectedClient, loading: clientsLoading } = useClientContext();
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<ControlTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -168,7 +170,12 @@ export function ControlTasksCard() {
       title="Panel de gestiones"
       icon={ClipboardList}
       action={
-        <Button variant="ghost" size="sm" className="text-primary text-xs">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-primary text-xs"
+          onClick={() => navigate("/historial-gestiones")}
+        >
           Ver historial
         </Button>
       }
