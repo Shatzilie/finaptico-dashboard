@@ -10,6 +10,7 @@ import {
   ChevronRight,
   FileText,
   ClipboardList,
+  Archive,
   X
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -21,6 +22,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, clientVisible: true },
+  { title: "Historial", url: "/historial-gestiones", icon: Archive, clientVisible: true },
   { title: "Tesorería", url: "/tesoreria", icon: Wallet, clientVisible: false },
   { title: "Proyecciones", url: "/proyecciones", icon: TrendingUp, clientVisible: false },
   { title: "Acciones", url: "/acciones", icon: ListChecks, clientVisible: false },
