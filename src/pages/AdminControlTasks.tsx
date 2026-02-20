@@ -32,7 +32,9 @@ import {
   Trash2,
   Filter,
   Copy,
+  Archive,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -180,6 +182,7 @@ const VISIBILITY_COLORS: Record<Visibility, string> = {
 export default function AdminControlTasks() {
   const { session } = useAuth();
   const { canSwitchClient } = useClientContext();
+  const navigate = useNavigate();
 
   // Data
   const [tasks, setTasks] = useState<ControlTask[]>([]);
@@ -446,15 +449,10 @@ export default function AdminControlTasks() {
 
       await loadTasks();
 
-      // Si estamos editando, actualizar el form con la respuesta del servidor
-      if (data?.data && isEditing) {
-        const task = data.data as ControlTask;
-        handleEdit(task);
-      } else {
-        setFormOpen(false);
-        setFormData(emptyForm);
-        setIsEditing(false);
-      }
+      // Siempre cerrar el formulario tras guardar
+      setFormOpen(false);
+      setFormData(emptyForm);
+      setIsEditing(false);
     } catch (err) {
       console.error("Error saving task:", err);
       toast({
@@ -499,10 +497,20 @@ export default function AdminControlTasks() {
           <h1 className="text-2xl font-bold text-foreground">
             Admin · Gestiones Kanban
           </h1>
-          <Button onClick={handleNewTask} variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva tarea
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => navigate("/historial-gestiones")}
+              variant="outline"
+              size="sm"
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              Historial de Gestiones
+            </Button>
+            <Button onClick={handleNewTask} variant="outline" size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva tarea
+            </Button>
+          </div>
         </div>
 
         {/* Filtros */}
