@@ -79,7 +79,7 @@ export function PendingInvoicesCard() {
         <p className="text-destructive text-sm">{error}</p>
       ) : invoices.length === 0 ? (
         <p className="text-muted-foreground text-sm">
-          Todas las facturas emitidas figuran como cobradas a la fecha actual.
+          No hay facturas pendientes de cobro.
         </p>
       ) : (
         <div className="space-y-4">
