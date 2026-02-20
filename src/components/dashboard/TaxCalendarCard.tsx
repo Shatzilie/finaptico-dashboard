@@ -191,7 +191,7 @@ export function TaxCalendarCard() {
         {hasValidVatDate && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">IVA — {quarterLabel}</p>
+              <p className="text-xs font-medium text-muted-foreground">Resultado IVA del trimestre — {quarterLabel}</p>
               <StatusPill
                 label={vatIsRefund ? 'A compensar' : vatAbsNet === 0 ? 'Sin actividad' : 'A ingresar'}
                 variant={vatIsRefund ? 'refund' : vatAbsNet === 0 ? 'neutral' : 'pay'}
@@ -205,8 +205,8 @@ export function TaxCalendarCard() {
             }`}>
               <p className="text-xs text-muted-foreground">
                 {vatIsRefund
-                  ? 'Hacienda te debe (compensable en próximas liquidaciones)'
-                  : 'A ingresar en Hacienda este trimestre'}
+                  ? 'IVA a compensar en próximos trimestres'
+                  : 'IVA a ingresar este trimestre'}
               </p>
               <p className={`text-xl font-semibold tabular-nums mt-1 ${
                 vatIsRefund ? 'text-emerald-400' : 'text-primary'
