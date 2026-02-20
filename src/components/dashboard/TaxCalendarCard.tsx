@@ -182,7 +182,7 @@ export function TaxCalendarCard() {
   return (
     <DashboardCard title="Situación fiscal estimada" icon={Calendar}>
       <p className="text-xs text-muted-foreground mb-5">
-        Estimación basada en la contabilidad registrada. Datos orientativos.
+        Estimación de impuestos del trimestre según la contabilidad actual.
       </p>
 
       <div className="space-y-6">
@@ -349,16 +349,13 @@ export function TaxCalendarCard() {
         )}
 
         {/* ═══ Footer ═══ */}
-        <div className="border-t border-border/50 pt-4 space-y-1">
-          <p className="text-[10px] text-muted-foreground/60">
-            Las cifras mostradas son estimaciones basadas en la información contable disponible. El cierre fiscal definitivo lo realiza la gestoría y puede incluir ajustes.
-          </p>
-          {hasValidGeneratedDate && (
+        {hasValidGeneratedDate && (
+          <div className="border-t border-border/50 pt-4">
             <p className="text-[10px] text-muted-foreground text-right">
               Actualizado: <span className="text-foreground tabular-nums">{new Date(data.snapshot_generated_at).toLocaleDateString("es-ES")}</span>
             </p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </DashboardCard>
   );
