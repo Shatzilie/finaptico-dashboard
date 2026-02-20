@@ -97,7 +97,7 @@ export function TaxPaymentsCard() {
   return (
     <DashboardCard title="Pagos de impuestos" icon={Receipt}>
       <p className="text-xs text-muted-foreground mb-3">
-        Liquidaciones registradas en el ejercicio actual
+        Impuestos ya pagados este año
       </p>
       {loading ? (
         <p className="text-muted-foreground text-sm">Cargando...</p>
@@ -109,9 +109,6 @@ export function TaxPaymentsCard() {
         </p>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Pagos contabilizados correspondientes a obligaciones ya presentadas.
-          </p>
           <div className="overflow-x-auto -mx-2">
             <Table>
               <TableHeader>
@@ -144,9 +141,6 @@ export function TaxPaymentsCard() {
                 Mostrando {MAX_VISIBLE_ROWS} de {taxPayments.length} liquidaciones.
               </p>
             )}
-            <p className="text-[10px] text-muted-foreground/60 text-center">
-              Se muestran únicamente importes registrados como pagados. No incluye obligaciones pendientes ni importes no registrados.
-            </p>
           </div>
         </div>
       )}
