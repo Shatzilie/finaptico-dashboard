@@ -42,9 +42,9 @@ export default function TreasuryCard() {
   const title = canSwitchClient ? "Tesorería" : "Tesorería hoy";
   const description = canSwitchClient
     ? "Saldo total del cliente seleccionado"
-    : "Saldo en cuentas según información disponible";
-  const amountLabel = "Saldo bancario registrado en contabilidad a la fecha indicada";
-  const dateLabel = canSwitchClient ? "Fecha snapshot" : "Corresponde a movimientos contabilizados hasta";
+    : "Dinero en tus cuentas bancarias";
+  const amountLabel = "Dinero disponible en cuentas";
+  const dateLabel = canSwitchClient ? "Fecha snapshot" : "Último dato";
 
   if (clientsError) {
     return (
@@ -155,11 +155,6 @@ export default function TreasuryCard() {
           </span>
         </div>
 
-        {!canSwitchClient && (
-          <p className="text-[10px] text-muted-foreground/60">
-            No incluye previsiones, compromisos futuros ni validación bancaria en tiempo real.
-          </p>
-        )}
       </CardContent>
     </Card>
   );
