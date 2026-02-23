@@ -71,7 +71,10 @@ export function PendingInvoicesCard() {
   }, [selectedClient?.code, clientLoading]);
 
   const totalPending = useMemo(() => {
-    return invoices.reduce((sum, inv) => sum + (Number.isFinite(inv.amount_pending) ? inv.amount_pending : 0), 0);
+    return invoices.reduce((sum, inv) => {
+      const amount = typeof inv.amount_pending === "string" ? parseFloat(inv.amount_pending) : inv.amount_pending;
+      return sum + (Number.isFinite(amount) ? amount : 0);
+    }, 0);
   }, [invoices]);
 
   const displayedInvoices = invoices.slice(0, MAX_VISIBLE_ROWS);
