@@ -1,13 +1,12 @@
+// src/pages/Index.tsx
 import { Info, Wallet, Scale, TrendingUp } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import TreasuryCard from "@/components/dashboard/TreasuryCard";
 import BalanceProjectionCard from "@/components/dashboard/BalanceProjectionCard";
 import { ControlTasksCard } from "@/components/dashboard/ControlTasksCard";
 import { TaxCalendarCard } from "@/components/dashboard/TaxCalendarCard";
-import { TaxPaymentsCard } from "@/components/dashboard/TaxPaymentsCard";
 import { PendingInvoicesCard } from "@/components/dashboard/PendingInvoicesCard";
-import Revenue12MonthsCard from "@/components/dashboard/Revenue12MonthsCard";
-import RevenueYTDCard from "@/components/dashboard/RevenueYTDCard";
+import RevenueCard from "@/components/dashboard/RevenueCard";
 import { useClientContext } from "@/context/ClientContext";
 
 const SectionHeader = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (
@@ -60,40 +59,22 @@ const Index = () => {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          SECCIÓN 3: FACTURACIÓN — Histórico 12m + YTD
+          SECCIÓN 3: FACTURACIÓN — Tarjeta unificada (YTD + gráfico 12m)
       ═══════════════════════════════════════════════════════════════════════ */}
       {showFullDashboard && (
         <section className="mb-10">
           <SectionHeader icon={TrendingUp} title="Facturación" />
-          
-          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-            <div>
-              <Revenue12MonthsCard />
-            </div>
-
-            <div>
-              <RevenueYTDCard />
-            </div>
-          </div>
+          <RevenueCard />
         </section>
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          SECCIÓN 4: COMPROMISOS FISCALES
+          SECCIÓN 4: COMPROMISOS FISCALES — Tarjeta unificada (estimaciones + pagos)
       ═══════════════════════════════════════════════════════════════════════ */}
       {showFullDashboard && (
         <section className="mb-10">
           <SectionHeader icon={Scale} title="Compromisos fiscales" />
-          
-          <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-            <div>
-              <TaxCalendarCard />
-            </div>
-
-            <div>
-              <TaxPaymentsCard />
-            </div>
-          </div>
+          <TaxCalendarCard />
         </section>
       )}
 
