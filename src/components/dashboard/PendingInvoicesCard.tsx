@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+// src/components/dashboard/PendingInvoicesCard.tsx
+// Facturas pendientes de cobro con total pendiente
+import { useEffect, useMemo, useState } from "react";
 import { DashboardCard } from "@/components/dashboard/DashboardCard";
 import { useClientContext } from "@/context/ClientContext";
 import { fetchWidget } from "@/lib/dashboardApi";
@@ -68,6 +70,10 @@ export function PendingInvoicesCard() {
     loadInvoices();
   }, [selectedClient?.code, clientLoading]);
 
+  const totalPending = useMemo(() => {
+    return invoices.reduce((sum, inv) => sum + (Number.isFinite(inv.amount_pending) ? inv.amount_pending : 0), 0);
+  }, [invoices]);
+
   const displayedInvoices = invoices.slice(0, MAX_VISIBLE_ROWS);
   const hasMore = invoices.length > MAX_VISIBLE_ROWS;
 
@@ -83,9 +89,17 @@ export function PendingInvoicesCard() {
         </p>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Facturas emitidas que aún no se han cobrado.
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Facturas emitidas que aún no se han cobrado.
+            </p>
+            <div className="text-right">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Total pendiente</p>
+              <p className="text-lg font-semibold text-foreground tabular-nums">
+                {formatAmount(totalPending)}
+              </p>
+            </div>
+          </div>
 
           {/* Desktop Table */}
           <div className="hidden md:block">
