@@ -1,10 +1,15 @@
+// src/components/dashboard/TaxCalendarCard.tsx
+// Tarjeta fiscal unificada: estimaciones + pagos realizados
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, AlertCircle } from "lucide-react";
+import { Calendar, AlertCircle, CheckCircle2 } from "lucide-react";
 import { DashboardCard } from "./DashboardCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useClientContext } from "@/context/ClientContext";
 import { fetchWidget } from "@/lib/dashboardApi";
 import { formatCurrency, formatNumber } from "@/lib/utils";
+
+/* ─── Types ─── */
 
 type FiscalSnapshot = {
   client_code: string;
@@ -38,20 +43,25 @@ type FiscalSnapshot = {
   m130_estimated_payment: string | number | null;
 };
 
+type TaxPayment = {
+  id: string;
+  tax_model_code: string;
+  period_start: string;
+  period_end: string;
+  status: string;
+  result: string;
+  amount: number;
+  currency: string;
+  settled_at: string;
+  notes: string | null;
+};
+
+/* ─── Helpers ─── */
+
 function parseNumericValue(value: string | number | null | undefined): number | null {
   if (value === null || value === undefined) return null;
   const parsed = typeof value === 'string' ? parseFloat(value) : value;
   return isNaN(parsed) ? null : parsed;
-}
-
-async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot | null> {
-  const rows = await fetchWidget<FiscalSnapshot>("fiscal_snapshot", clientCode);
-  return rows.length > 0 ? rows[0] : null;
-}
-
-function formatPercent(value: number | null | undefined): string {
-  if (value === null || value === undefined) return "-";
-  return `${formatNumber(value * 100, 0)}%`;
 }
 
 function isValidDate(dateStr: string | null | undefined): boolean {
@@ -82,6 +92,27 @@ function getQuarterLabel(dateStr: string | null | undefined): string {
   return `Q${q} ${d.getFullYear()}`;
 }
 
+function formatPaymentPeriod(periodEnd: string): string {
+  const date = new Date(periodEnd);
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  let quarter: string;
+  if (month <= 3) quarter = "Q1";
+  else if (month <= 6) quarter = "Q2";
+  else if (month <= 9) quarter = "Q3";
+  else quarter = "Q4";
+  return `${quarter} ${year}`;
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return "-";
+  return new Date(dateStr).toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 function StatusPill({ label, variant }: { label: string; variant: 'pay' | 'refund' | 'neutral' }) {
   const colors = {
     pay: 'bg-primary/10 text-primary',
@@ -95,10 +126,13 @@ function StatusPill({ label, variant }: { label: string; variant: 'pay' | 'refun
   );
 }
 
+/* ─── Component ─── */
+
 export function TaxCalendarCard() {
   const { selectedClient, loading: clientsLoading } = useClientContext();
   const clientCode = selectedClient?.code ?? null;
 
+  // Fiscal snapshot
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["fiscal-current-snapshot", clientCode],
     queryFn: () => fetchFiscalSnapshot(clientCode as string),
@@ -107,10 +141,41 @@ export function TaxCalendarCard() {
     refetchOnWindowFocus: false,
   });
 
+  // Tax payments
+  const [taxPayments, setTaxPayments] = useState<TaxPayment[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+
+  useEffect(() => {
+    if (clientsLoading || !clientCode) {
+      setTaxPayments([]);
+      return;
+    }
+
+    const loadPayments = async () => {
+      setPaymentsLoading(true);
+      try {
+        const result = await fetchWidget<TaxPayment>("tax_payments_settled", clientCode);
+        setTaxPayments(Array.isArray(result) ? result : []);
+      } catch {
+        setTaxPayments([]);
+      } finally {
+        setPaymentsLoading(false);
+      }
+    };
+
+    loadPayments();
+  }, [clientCode, clientsLoading]);
+
+  /* ─── Loading ─── */
+
   if (clientsLoading || isLoading) {
     return (
       <DashboardCard title="Situación fiscal estimada" icon={Calendar}>
-        <div className="space-y-3"><Skeleton className="h-6 w-32" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-2/3" /></div>
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
       </DashboardCard>
     );
   }
@@ -118,7 +183,9 @@ export function TaxCalendarCard() {
   if (!clientCode) {
     return (
       <DashboardCard title="Situación fiscal estimada" icon={Calendar}>
-        <div className="py-8 text-center"><p className="text-sm text-muted-foreground">Cargando datos fiscales...</p></div>
+        <div className="py-8 text-center">
+          <p className="text-sm text-muted-foreground">Cargando datos fiscales...</p>
+        </div>
       </DashboardCard>
     );
   }
@@ -142,7 +209,14 @@ export function TaxCalendarCard() {
   if (!data || !hasFiscalBasis) {
     return (
       <DashboardCard title="Situación fiscal estimada" icon={Calendar}>
-        <div className="py-8 text-center"><p className="text-sm text-muted-foreground">Datos fiscales no disponibles todavía</p></div>
+        <div className="py-8 text-center">
+          <p className="text-sm text-muted-foreground">Datos fiscales no disponibles todavía</p>
+        </div>
+
+        {/* Payments even without fiscal data */}
+        {taxPayments.length > 0 && (
+          <TaxPaymentsSection payments={taxPayments} loading={paymentsLoading} />
+        )}
       </DashboardCard>
     );
   }
@@ -152,7 +226,6 @@ export function TaxCalendarCard() {
   const vatOutput = parseNumericValue(data.vat_output_qtd);
   const vatSupported = parseNumericValue(data.vat_supported_qtd);
   const vatNet = parseNumericValue(data.vat_net_qtd);
-  const isTaxRate = parseNumericValue(data.is_tax_rate);
   const isEstimatedTax = parseNumericValue(data.is_estimated_tax_ytd);
   const isRevenue = parseNumericValue(data.is_revenue_ytd);
   const isSpend = parseNumericValue(data.is_spend_ytd);
@@ -346,6 +419,9 @@ export function TaxCalendarCard() {
           </div>
         )}
 
+        {/* ═══ PAGOS REALIZADOS ═══ */}
+        <TaxPaymentsSection payments={taxPayments} loading={paymentsLoading} />
+
         {/* ═══ Footer ═══ */}
         {hasValidGeneratedDate && (
           <div className="border-t border-border/50 pt-4">
@@ -357,4 +433,71 @@ export function TaxCalendarCard() {
       </div>
     </DashboardCard>
   );
+}
+
+/* ─── Sub-component: Tax Payments Section ─── */
+
+function TaxPaymentsSection({ payments, loading }: { payments: TaxPayment[]; loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="border-t border-border/50 pt-5 space-y-2">
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+
+  if (payments.length === 0) return null;
+
+  const MAX_VISIBLE = 4;
+  const displayed = payments.slice(0, MAX_VISIBLE);
+  const hasMore = payments.length > MAX_VISIBLE;
+
+  return (
+    <div className="border-t border-border/50 pt-5 space-y-3">
+      <div className="flex items-center gap-1.5">
+        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+        <p className="text-xs font-medium text-muted-foreground">Impuestos ya pagados este año</p>
+      </div>
+
+      <div className="space-y-2">
+        {displayed.map((payment) => (
+          <div
+            key={payment.id}
+            className="flex items-center justify-between rounded-lg border border-border/50 px-3 py-2.5"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-foreground whitespace-nowrap">
+                Mod. {payment.tax_model_code}
+              </span>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {formatPaymentPeriod(payment.period_end)}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-semibold text-foreground tabular-nums">
+                {formatCurrency(payment.amount, payment.currency || "EUR")}
+              </span>
+              <span className="text-[10px] text-muted-foreground tabular-nums">
+                {formatDate(payment.settled_at)}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {hasMore && (
+        <p className="text-[10px] text-muted-foreground/60 text-center">
+          Mostrando {MAX_VISIBLE} de {payments.length} liquidaciones.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ─── Data fetch ─── */
+
+async function fetchFiscalSnapshot(clientCode: string): Promise<FiscalSnapshot | null> {
+  const rows = await fetchWidget<FiscalSnapshot>("fiscal_snapshot", clientCode);
+  return rows.length > 0 ? rows[0] : null;
 }
