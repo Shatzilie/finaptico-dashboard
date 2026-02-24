@@ -86,7 +86,9 @@ function formatMonthLabel(monthStr: string): string {
 
 function formatCurrentMonth(dateStr: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+  const raw = d.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+  // Capitalize first letter only: "febrero de 2026" → "Febrero de 2026"
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
 function formatAxisTick(value: number): string {
@@ -260,9 +262,8 @@ export default function OperationalStatusCard() {
 
   return (
     <Card className="font-sans">
-      <CardHeader>
-        <CardTitle>Estado operativo del mes</CardTitle>
-        <CardDescription className="capitalize">{monthLabel}</CardDescription>
+      <CardHeader className="pb-2">
+        <CardDescription className="text-sm font-medium capitalize">{monthLabel}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
 
