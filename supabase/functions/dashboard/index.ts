@@ -53,6 +53,8 @@ const WIDGETS: Record<string, string> = {
     "SELECT * FROM erp_core.v_dashboard_sales_invoices_pending WHERE client_code = ANY($1) ORDER BY due_date ASC",
   tax_payments_settled:
     "SELECT id, tax_model_code, period_start, period_end, status, result, amount, currency, settled_at, notes FROM public.tax_filings WHERE client_code = ANY($1) AND status = 'SETTLED' AND result = 'PAYABLE' AND settled_at IS NOT NULL AND settled_at >= date_trunc('year', now()) AND settled_at < date_trunc('year', now()) + interval '1 year' ORDER BY settled_at DESC",
+  operational_status:
+    "SELECT * FROM erp_core.v_dashboard_operational_status WHERE client_code = ANY($1)",
 };
 
 interface AuthContext {
@@ -129,7 +131,6 @@ Deno.serve(async (req: Request) => {
     const widgetName = body.widget;
 
     // Special case: my_clients returns allowed clients with display names
-    // companies.display_name (NOT label)
     if (widgetName === "my_clients") {
       const result = await pg.queryObject({
         text: `
