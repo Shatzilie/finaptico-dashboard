@@ -434,12 +434,12 @@ export default function OperationalStatusCard() {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="opRevenueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#34d399" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="opExpensesGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#f87171" stopOpacity={0.25} />
+                      <stop offset="95%" stopColor="#f87171" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -489,7 +489,7 @@ export default function OperationalStatusCard() {
                   <Area
                     type="monotone"
                     dataKey="revenue"
-                    stroke="hsl(var(--chart-2))"
+                    stroke="#34d399"
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#opRevenueGradient)"
@@ -497,7 +497,7 @@ export default function OperationalStatusCard() {
                   <Area
                     type="monotone"
                     dataKey="expenses"
-                    stroke="hsl(var(--chart-1))"
+                    stroke="#f87171"
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#opExpensesGradient)"
