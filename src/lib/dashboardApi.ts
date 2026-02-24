@@ -16,6 +16,7 @@ export type WidgetName =
   | "fiscal_irpf_split"
   | "sales_invoices_pending"
   | "tax_payments_settled"
+  | "operational_status"
   | "my_clients";
 
 /**
