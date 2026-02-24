@@ -1,5 +1,5 @@
 // src/pages/Index.tsx
-import { Info, Wallet, Scale, TrendingUp } from "lucide-react";
+import { Info, Wallet, Scale, TrendingUp, Activity } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import TreasuryCard from "@/components/dashboard/TreasuryCard";
 import BalanceProjectionCard from "@/components/dashboard/BalanceProjectionCard";
@@ -7,6 +7,7 @@ import { ControlTasksCard } from "@/components/dashboard/ControlTasksCard";
 import { TaxCalendarCard } from "@/components/dashboard/TaxCalendarCard";
 import { PendingInvoicesCard } from "@/components/dashboard/PendingInvoicesCard";
 import RevenueCard from "@/components/dashboard/RevenueCard";
+import OperationalStatusCard from "@/components/dashboard/OperationalStatusCard";
 import { useClientContext } from "@/context/ClientContext";
 
 const SectionHeader = ({ icon: Icon, title }: { icon: React.ElementType; title: string }) => (
@@ -35,7 +36,18 @@ const Index = () => {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          SECCIÓN 2: SITUACIÓN DE CAJA
+          SECCIÓN 2: ESTADO OPERATIVO DEL MES
+          Tarjeta nueva Fase 2 — Capa 1 de la metodología
+      ═══════════════════════════════════════════════════════════════════════ */}
+      {showFullDashboard && (
+        <section className="mb-10">
+          <SectionHeader icon={Activity} title="Estado operativo del mes" />
+          <OperationalStatusCard />
+        </section>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          SECCIÓN 3: SITUACIÓN DE CAJA
           Tesorería (estrecho) | Facturas pendientes (ancho) | Evolución (medio)
       ═══════════════════════════════════════════════════════════════════════ */}
       {showFullDashboard && (
@@ -59,7 +71,7 @@ const Index = () => {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          SECCIÓN 3: FACTURACIÓN — Tarjeta unificada (YTD + gráfico 12m)
+          SECCIÓN 4: FACTURACIÓN — Tarjeta unificada (YTD + gráfico 12m)
       ═══════════════════════════════════════════════════════════════════════ */}
       {showFullDashboard && (
         <section className="mb-10">
@@ -69,7 +81,7 @@ const Index = () => {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          SECCIÓN 4: COMPROMISOS FISCALES — Tarjeta unificada (estimaciones + pagos)
+          SECCIÓN 5: COMPROMISOS FISCALES — Tarjeta unificada (estimaciones + pagos)
       ═══════════════════════════════════════════════════════════════════════ */}
       {showFullDashboard && (
         <section className="mb-10">
