@@ -263,7 +263,7 @@ export default function OperationalStatusCard() {
   return (
     <Card className="font-sans">
       <CardHeader className="pb-2">
-        <CardDescription className="text-sm font-medium capitalize">{monthLabel}</CardDescription>
+        <CardDescription className="text-sm font-medium">{monthLabel}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
 
